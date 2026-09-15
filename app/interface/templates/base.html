@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="{% block description %}A hybrid machine learning and language model screening tool that estimates diabetes risk from eight clinical parameters, grounded in WHO and IDF guidelines.{% endblock %}">
+  <meta name="color-scheme" content="light dark">
+  <title>{% block title %}Diabetes Risk Screening{% endblock %} &middot; {{ app_name }}</title>
+
+  {#
+    Applies the saved theme before first paint, so there is no flash of the
+    wrong theme. Loaded as an external file rather than an inline <script>
+    because the Content Security Policy is `script-src 'self'`.
+  #}
+  <script src="{{ url_for('static', filename='js/theme-init.js') }}"></script>
+
+  <link rel="preload" href="{{ url_for('static', filename='assets/fonts/inter-variable.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="{{ url_for('static', filename='assets/fonts/anton-400.woff2') }}" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/design-system.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='assets/favicon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='assets/logo.png') }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  {% include 'partials/header.html' %}
+
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+
+  {% include 'partials/footer.html' %}
+  {% include 'partials/chatbot.html' %}
+
+  <script src="{{ url_for('static', filename='js/theme.js') }}" defer></script>
+  {% if chat_available %}
+    <script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>
+  {% endif %}
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,47 @@
+{% from 'partials/icons.html' import icon %}
+
+<header class="site-header">
+  <div class="shell shell--wide site-header__inner">
+
+    <a class="brand" href="{{ url_for('pages.index') }}">
+      <img class="brand__mark"
+           src="{{ url_for('static', filename='assets/logo.png') }}"
+           alt="" width="34" height="34" decoding="async">
+      <span class="brand__name">{{ app_name }}</span>
+    </a>
+
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+      {% for item in nav_items %}
+        <a class="site-nav__link"
+           href="{{ url_for(item.endpoint) }}"
+           {% if request.endpoint == item.endpoint %}aria-current="page"{% endif %}>{{ item.label }}</a>
+      {% endfor %}
+    </nav>
+
+    <div class="header-actions">
+      <button type="button"
+              class="btn btn--icon btn--bare"
+              id="theme-toggle"
+              aria-label="Switch colour theme"
+              title="Switch colour theme">
+        <span data-theme-icon="light">{{ icon('moon') }}</span>
+        <span data-theme-icon="dark" hidden>{{ icon('sun') }}</span>
+      </button>
+
+      <a class="btn btn--primary btn--cta" href="{{ url_for('pages.check') }}">
+        Check my risk
+      </a>
+
+      <button type="button"
+              class="btn btn--icon btn--bare nav-toggle"
+              id="nav-toggle"
+              aria-controls="site-nav"
+              aria-expanded="false"
+              aria-label="Toggle navigation menu">
+        <span data-nav-icon="closed">{{ icon('menu') }}</span>
+        <span data-nav-icon="open" hidden>{{ icon('close') }}</span>
+      </button>
+    </div>
+
+  </div>
+</header>

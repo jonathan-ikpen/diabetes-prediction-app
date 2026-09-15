@@ -1,0 +1,451 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}How the diabetes risk model was trained, how well it performs on held-out data, and where it should not be trusted.{% endblock %}
+
+{% set test = evaluation.get('test_metrics', {}) %}
+{% set screening = evaluation.get('screening_metrics', {}) %}
+{% set cv = evaluation.get('cross_validation', {}) %}
+{% set dataset = metadata.get('dataset', {}) %}
+{% set matrix = screening.get('confusion_matrix', {}) %}
+
+{% block content %}
+<section class="section">
+  <div class="shell">
+
+    <div class="section-head section-head--page">
+      <h1>Model card</h1>
+      <p class="lead">
+        What this model is, what it was trained on, how well it actually performs, and the
+        conditions under which its output should not be trusted.
+      </p>
+    </div>
+
+    {% if not model_ready %}
+      <div class="alert alert--error">
+        <div>
+          <strong>No trained model found.</strong>
+          <p class="subtext">Run <code>python -m training.train</code> to populate this page.</p>
+        </div>
+      </div>
+    {% else %}
+
+    <p class="page-meta">
+      {{ metadata.get('model_name') }} v{{ metadata.get('model_version') }}
+      &middot; {{ metadata.get('algorithm') }}
+      &middot; trained {{ metadata.get('trained_at', '')[:10] }}
+    </p>
+
+    {# ------------------------------------------------------- HEADLINE -- #}
+    <div class="metric-grid">
+      {% for item in [
+        {'value': '%.3f'|format(test.get('roc_auc', 0)), 'label': 'ROC-AUC',
+         'note': 'Held-out test set. Threshold independent.'},
+        {'value': (screening.get('recall', 0) * 100)|round|int ~ '%', 'label': 'Sensitivity',
+         'note': 'Share of true cases the tool catches.'},
+        {'value': (screening.get('specificity', 0) * 100)|round|int ~ '%', 'label': 'Specificity',
+         'note': 'Share of healthy people correctly cleared.'},
+        {'value': (screening.get('accuracy', 0) * 100)|round|int ~ '%', 'label': 'Accuracy',
+         'note': 'Overall, at the screening threshold.'},
+        {'value': '%.3f'|format(cv.get('mean', 0)), 'label': 'Cross-validated AUC',
+         'note': cv.get('folds', 5)|string ~ '-fold, ±' ~ '%.3f'|format(cv.get('std', 0))}
+      ] %}
+        <div class="metric">
+          <span class="metric__value numeric">{{ item.value }}</span>
+          <span class="metric__label">{{ item.label }}</span>
+          <span class="metric__note">{{ item.note }}</span>
+        </div>
+      {% endfor %}
+    </div>
+
+    {# --------------------------------------------------- THRESHOLD NOTE #}
+    <div class="block mt-7">
+      <div class="row row--nowrap row--top">
+        <div class="stack stack--sm">
+          <span class="eyebrow">Operating threshold</span>
+          <h3 class="panel-title">
+            Tuned to {{ (metadata.get('screening_threshold', 0.5) * 100) | round(1) }}%,
+            not the textbook 50%
+          </h3>
+        </div>
+      </div>
+
+      <p class="subtext mt-5 reading">
+        At the default 0.5 cut-off this model catches only
+        {{ (test.get('recall', 0) * 100) | round | int }}% of true cases. For a screening
+        instrument that is the wrong trade: telling an at-risk person they are fine costs
+        far more than sending a healthy person for a confirmatory blood test. The threshold
+        was lowered until at least
+        {{ (metadata.get('target_sensitivity', 0.8) * 100) | round | int }}% of cases are
+        caught, and the cost was paid in specificity. The cut-off was selected on
+        out-of-fold training predictions only, so the held-out test set stayed untouched.
+      </p>
+
+      <div class="table-wrap mt-6">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Metric</th>
+              <th scope="col">At 0.500 (default)</th>
+              <th scope="col">At {{ '%.3f'|format(metadata.get('screening_threshold', 0.5)) }} (in use)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for name, label in [('recall', 'Sensitivity (recall)'), ('specificity', 'Specificity'),
+                                   ('precision', 'Precision'), ('f1', 'F1 score'), ('accuracy', 'Accuracy')] %}
+              <tr>
+                <td>{{ label }}</td>
+                <td class="numeric">{{ '%.4f'|format(test.get(name, 0)) }}</td>
+                <td class="numeric">
+                  <strong>{{ '%.4f'|format(screening.get(name, 0)) }}</strong>
+                  {% if screening.get(name, 0) > test.get(name, 0) %}
+                    <span class="micro delta delta--up">&uarr;</span>
+                  {% elif screening.get(name, 0) < test.get(name, 0) %}
+                    <span class="micro delta delta--down">&darr;</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{# --------------------------------------------------- CONFUSION & ROC -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Held-out performance</span>
+      <h2>Where it gets things wrong</h2>
+      <p class="lead">
+        Measured on {{ metadata.get('training', {}).get('n_test_rows', 0) }} records the
+        model never saw during training, at the screening threshold in use.
+      </p>
+    </div>
+
+    <div class="grid grid--wide">
+
+      {# ------------------------------------------------ confusion matrix #}
+      <div class="block">
+        <span class="eyebrow">Confusion matrix</span>
+        <div class="confusion mt-5">
+          <div class="confusion__cell confusion__cell--head"></div>
+          <div class="confusion__cell confusion__cell--head">Predicted low</div>
+          <div class="confusion__cell confusion__cell--head">Predicted at risk</div>
+
+          <div class="confusion__cell confusion__cell--head">Actually negative</div>
+          <div class="confusion__cell confusion__cell--good">
+            <span class="confusion__count numeric">{{ matrix.get('true_negative', 0) }}</span>
+            <span class="confusion__tag">Correctly cleared</span>
+          </div>
+          <div class="confusion__cell">
+            <span class="confusion__count numeric">{{ matrix.get('false_positive', 0) }}</span>
+            <span class="confusion__tag">Sent for testing unnecessarily</span>
+          </div>
+
+          <div class="confusion__cell confusion__cell--head">Actually positive</div>
+          <div class="confusion__cell confusion__cell--bad">
+            <span class="confusion__count numeric">{{ matrix.get('false_negative', 0) }}</span>
+            <span class="confusion__tag">Missed &mdash; the costly error</span>
+          </div>
+          <div class="confusion__cell confusion__cell--good">
+            <span class="confusion__count numeric">{{ matrix.get('true_positive', 0) }}</span>
+            <span class="confusion__tag">Correctly flagged</span>
+          </div>
+        </div>
+
+        <p class="micro mt-5">
+          {{ matrix.get('false_negative', 0) }} at-risk people were missed and
+          {{ matrix.get('false_positive', 0) }} healthy people were referred for a
+          confirmatory test. The second error is recoverable; the first is not.
+        </p>
+      </div>
+
+      {# ------------------------------------------------------ ROC curve #}
+      <div class="block">
+        <span class="eyebrow">ROC curve</span>
+        <p class="subtext mt-4">
+          Sensitivity against the false positive rate across every possible threshold. The
+          dashed line is random guessing.
+        </p>
+
+        {% if evaluation.get('roc_curve') %}
+          <svg class="chart mt-5" viewBox="-14 -8 122 122" role="img"
+               aria-label="ROC curve with an area under the curve of {{ '%.3f'|format(test.get('roc_auc', 0)) }}">
+            <g class="chart__grid">
+              {% for tick in [0, 25, 50, 75, 100] %}
+                <line x1="0" y1="{{ tick }}" x2="100" y2="{{ tick }}"/>
+                <line x1="{{ tick }}" y1="0" x2="{{ tick }}" y2="100"/>
+              {% endfor %}
+            </g>
+
+            <polygon class="chart__area"
+                     points="0,100 {% for point in evaluation.roc_curve %}{{ (point.fpr * 100)|round(2) }},{{ (100 - point.tpr * 100)|round(2) }} {% endfor %}100,100"/>
+
+            <line class="chart__diagonal" x1="0" y1="100" x2="100" y2="0"/>
+
+            <polyline class="chart__curve"
+                      points="{% for point in evaluation.roc_curve %}{{ (point.fpr * 100) | round(2) }},{{ (100 - point.tpr * 100) | round(2) }} {% endfor %}"/>
+
+            <text class="chart__label" x="50" y="114" text-anchor="middle">False positive rate</text>
+            <text class="chart__label" x="-6" y="50" text-anchor="middle"
+                  transform="rotate(-90 -6 50)">Sensitivity</text>
+          </svg>
+
+          <div class="row row--between mt-5">
+            <span class="badge badge--accent">AUC {{ '%.3f'|format(test.get('roc_auc', 0)) }}</span>
+            <span class="micro">Random guessing would score 0.500</span>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------- IMPORTANCES -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Feature importance</span>
+      <h2>What the forest actually weighs</h2>
+      <p class="lead">
+        Mean decrease in impurity across all trees. Glucose dominating is the expected and
+        clinically correct result &mdash; it is the parameter WHO uses to define the disease.
+      </p>
+    </div>
+
+    <div class="block">
+      <ul class="importance-list">
+        {% for row in importances %}
+          <li class="importance-list__row">
+            <span class="importance-list__name">
+              <span class="importance-list__rank numeric">{{ '%02d'|format(loop.index) }}</span>
+              {{ row.display_name }}
+              {% if row.unit not in ('count', 'score') %}
+                <span class="micro">&middot; {{ row.unit }}</span>
+              {% endif %}
+            </span>
+            <span class="impact-bar">
+              <span class="impact-bar__track">
+                <span class="impact-bar__fill"
+                      style="width: {{ (row.importance / importances[0].importance * 100) | round(1) }}%"></span>
+              </span>
+              <span class="impact-bar__value numeric">{{ (row.importance * 100) | round(1) }}%</span>
+            </span>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>
+
+{# ---------------------------------------------------- TRAINING DETAIL -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Reproducibility</span>
+      <h2>How it was trained</h2>
+    </div>
+
+    <div class="grid grid--wide">
+
+      <div class="block">
+        <span class="eyebrow">Dataset</span>
+        <div class="table-wrap mt-5">
+          <table class="table table--compact">
+            <tbody>
+              <tr><td>Source</td><td>{{ dataset.get('name') }}</td></tr>
+              <tr><td>Records</td><td class="numeric">{{ dataset.get('rows') }}</td></tr>
+              <tr><td>Features</td><td class="numeric">{{ dataset.get('features') }}</td></tr>
+              <tr>
+                <td>Class balance</td>
+                <td class="numeric">
+                  {{ dataset.get('class_balance', {}).get('negative_0') }} negative /
+                  {{ dataset.get('class_balance', {}).get('positive_1') }} positive
+                </td>
+              </tr>
+              <tr>
+                <td>Train / test split</td>
+                <td class="numeric">
+                  {{ metadata.get('training', {}).get('n_train_rows') }} /
+                  {{ metadata.get('training', {}).get('n_test_rows') }} (stratified)
+                </td>
+              </tr>
+              <tr>
+                <td>Zero-encoded missing</td>
+                <td>{{ metadata.get('zero_as_missing_columns', []) | join(', ') }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="micro mt-5">
+          Zeros in those five columns mean "not measured", not zero. They are replaced by
+          the column median inside the pipeline, fitted on training folds only so no test
+          information leaks into training.
+        </p>
+      </div>
+
+      <div class="block">
+        <span class="eyebrow">Selected hyperparameters</span>
+        <div class="table-wrap mt-5">
+          <table class="table table--compact">
+            <tbody>
+              {% for key, value in metadata.get('hyperparameters', {}).items() %}
+                <tr><td><code>{{ key }}</code></td><td class="numeric">{{ value }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        <p class="micro mt-5">
+          Chosen by grid search over
+          {{ metadata.get('training', {}).get('cv_folds', 5) }}-fold stratified
+          cross-validation, scored on
+          <code>{{ metadata.get('training', {}).get('search_scoring', 'roc_auc') }}</code>.
+          Random seed {{ metadata.get('training', {}).get('random_state') }}, so a retrain
+          reproduces these numbers exactly.
+        </p>
+      </div>
+
+      <div class="block">
+        <span class="eyebrow">Cross-validation stability</span>
+        <p class="subtext mt-4">
+          ROC-AUC on each of the {{ cv.get('folds', 5) }} folds. Tight spread means the
+          model is not depending on one lucky split.
+        </p>
+        <ul class="importance-list mt-5">
+          {% for score in cv.get('scores', []) %}
+            <li class="importance-list__row">
+              <span class="importance-list__name">
+                <span class="importance-list__rank numeric">Fold {{ loop.index }}</span>
+              </span>
+              <span class="impact-bar">
+                <span class="impact-bar__track">
+                  <span class="impact-bar__fill" style="width: {{ (score * 100) | round(1) }}%"></span>
+                </span>
+                <span class="impact-bar__value numeric">{{ '%.3f'|format(score) }}</span>
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="micro mt-5">
+          Mean {{ '%.4f'|format(cv.get('mean', 0)) }},
+          standard deviation {{ '%.4f'|format(cv.get('std', 0)) }}.
+          Train-to-test ROC-AUC gap:
+          {{ '%.4f'|format(evaluation.get('overfitting_gap_roc_auc', 0)) }}.
+        </p>
+      </div>
+
+      <div class="block">
+        <span class="eyebrow">Environment</span>
+        <div class="table-wrap mt-5">
+          <table class="table table--compact">
+            <tbody>
+              {% for key, value in metadata.get('environment', {}).items() %}
+                <tr><td>{{ key | replace('_', ' ') | title }}</td><td class="numeric">{{ value }}</td></tr>
+              {% endfor %}
+              <tr>
+                <td>Pipeline</td>
+                <td class="subtext">{{ metadata.get('pipeline_steps', []) | join(' &rarr; ') | safe }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------- LIMITATIONS -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Known limitations</span>
+      <h2>Where this model should not be trusted</h2>
+    </div>
+
+    <div class="stack stack--sm">
+      {% for item in [
+        {'q': 'The training population is not the target population',
+         'a': 'The Pima Indians Diabetes Dataset records adult women of Pima heritage in the United States. Diabetes risk in Nigerian populations differs in its genetic, dietary, and environmental drivers. Absolute probabilities should be read as a prompt to get tested, not as a personal forecast. A locally collected dataset would be required before any clinical deployment.'},
+        {'q': 'It is a small dataset',
+         'a': '768 records is modest. The held-out test set is only ' ~ metadata.get('training', {}).get('n_test_rows', 0) ~ ' records, so every metric on this page carries meaningful uncertainty. A few records changing class would move the numbers visibly.'},
+        {'q': 'Nearly half the insulin values were missing',
+         'a': 'In the original data, 374 of 768 insulin readings and 227 skinfold readings were recorded as zero, meaning not measured. Median imputation makes the data usable but suppresses genuine variation, which is part of why insulin ranks lower than clinical intuition suggests.'},
+        {'q': 'It predicts an association, not a diagnosis',
+         'a': 'The model learned which parameter patterns co-occurred with a positive diabetes test in one cohort. That is a statistical association. It cannot detect diabetes, cannot rule it out, and does not replace a laboratory glucose or HbA1c measurement.'},
+        {'q': 'Sex and pregnancy are entangled in the inputs',
+         'a': 'The Pregnancies parameter only carries information for people who can be pregnant. The model was trained exclusively on women, so applying it to men means feeding a constant zero into a feature the model expects to vary.'}
+      ] %}
+        <details class="disclosure">
+          <summary class="disclosure__summary">
+            {{ item.q }}
+            <svg class="disclosure__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </summary>
+          <p class="disclosure__content">{{ item.a }}</p>
+        </details>
+      {% endfor %}
+    </div>
+
+    {# ---------------------------------------------------------- API -- #}
+    <div class="block mt-8">
+      <div class="row row--nowrap row--top">
+        <div class="stack stack--sm">
+          <span class="eyebrow">Programmatic access</span>
+          <h3 class="panel-title">JSON API</h3>
+        </div>
+      </div>
+
+      <div class="table-wrap mt-6">
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Endpoint</th>
+              <th scope="col">Method</th>
+              <th scope="col">Returns</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>/health</code></td>
+              <td>GET</td>
+              <td class="subtext">
+                Live AI status. Pings the LLM provider and reports whether it is
+                genuinely usable. 200 when connected, 503 otherwise.
+              </td>
+            </tr>
+            <tr>
+              <td><code>/api/health</code></td>
+              <td>GET</td>
+              <td class="subtext">Full readiness: the model, the live AI status, and the knowledge base.</td>
+            </tr>
+            <tr>
+              <td><code>/api/predict</code></td>
+              <td>POST</td>
+              <td class="subtext">Probability, risk band, and the WHO/IDF reading of all eight values. Deterministic.</td>
+            </tr>
+            <tr>
+              <td><code>/api/narrative</code></td>
+              <td>POST</td>
+              <td class="subtext">The same, plus the generated clinical explanation.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="micro mt-5">
+        POST a JSON object with all eight parameter names:
+        <code>{{ metadata.get('feature_order', []) | join(', ') }}</code>.
+        Invalid input returns 400 with a per-field message.
+      </p>
+    </div>
+
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

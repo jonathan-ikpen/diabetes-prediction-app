@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}Enter eight clinical measurements to receive a diabetes risk probability and a plain-language explanation grounded in WHO and IDF guidance.{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="shell">
+
+    <div class="section-head section-head--page">
+      <h1>Clinical assessment</h1>
+      <p class="lead">
+        For health workers, or anyone who has their lab results to hand. Every field is
+        required. If you do not have these numbers,
+        <a href="{{ url_for('pages.check') }}">answer a few simple questions instead</a>.
+      </p>
+    </div>
+
+    {% if not model_ready %}
+      <div class="alert alert--error mb-6">
+        <div>
+          <strong>The model is not available.</strong>
+          <p class="subtext">
+            No trained model was found. Run <code>python -m training.train</code> from the
+            project root, then reload this page.
+          </p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if errors %}
+      <div class="alert alert--error mb-6" role="alert">
+        <div>
+          <strong>
+            {{ errors|length }} measurement{{ 's' if errors|length != 1 }}
+            need{{ '' if errors|length != 1 else 's' }} attention
+          </strong>
+          <ul class="alert__list">
+            {% for field, message in errors.items() %}
+              <li>{{ field }}: {{ message }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="assess-layout">
+
+      {# ------------------------------------------------------------ FORM #}
+      <form class="card"
+            method="POST"
+            action="{{ url_for('pages.result') }}"
+            id="assessment-form"
+            novalidate>
+
+        {% for group in field_groups %}
+          <fieldset class="fieldset">
+            <legend class="fieldset__legend">
+              <span class="eyebrow">{{ group.title }}</span>
+            </legend>
+
+            <div class="field-grid">
+              {% for field in group.fields %}
+                <div class="field">
+                  <label class="field__label" for="{{ field.name }}">
+                    <span>{{ field.label }}</span>
+                    {% if field.unit %}<span class="field__unit">{{ field.unit }}</span>{% endif %}
+                  </label>
+
+                  <input class="input numeric"
+                         type="number"
+                         id="{{ field.name }}"
+                         name="{{ field.name }}"
+                         inputmode="decimal"
+                         step="{{ field.step }}"
+                         min="{{ field.min }}"
+                         max="{{ field.max }}"
+                         value="{{ values.get(field.name, '') }}"
+                         placeholder="{{ field.min|int }}&ndash;{{ field.max|int }}"
+                         data-min="{{ field.min }}"
+                         data-max="{{ field.max }}"
+                         data-label="{{ field.label }}"
+                         data-integer="{{ 'true' if field.step == '1' else 'false' }}"
+                         aria-describedby="{{ field.name }}-hint {{ field.name }}-error"
+                         {% if errors.get(field.name) %}aria-invalid="true"{% endif %}
+                         required>
+
+                  <span class="field__hint" id="{{ field.name }}-hint">{{ field.hint }}</span>
+                  <span class="field__error"
+                        id="{{ field.name }}-error"
+                        role="alert">{{ errors.get(field.name, '') }}</span>
+                </div>
+              {% endfor %}
+            </div>
+          </fieldset>
+        {% endfor %}
+
+        <div class="form-footer">
+          <p class="micro measure-sm">
+            Nothing you enter is stored. Values are scored in memory and discarded.
+          </p>
+          <div class="row">
+            <button type="reset" class="btn">Clear</button>
+            <button type="submit"
+                    class="btn btn--primary btn--lg"
+                    id="submit-button"
+                    {% if not model_ready %}disabled{% endif %}>
+              <span data-submit-label="idle">Calculate my risk</span>
+              <span data-submit-label="busy" hidden>Calculating&hellip;</span>
+              </button>
+          </div>
+        </div>
+      </form>
+
+      {# ----------------------------------------------------------- ASIDE #}
+      <aside class="assess-aside">
+
+        <div class="card card--tight">
+          <span class="eyebrow">Try an example</span>
+          <p class="subtext mt-4">
+            Fill the form with a synthetic profile to see how the tool behaves across the
+            risk spectrum. These are illustrative values, not real patients.
+          </p>
+          <div class="stack stack--sm mt-5">
+            {% for key, sample in samples.items() %}
+              <button type="button"
+                      class="btn btn--sm btn--block"
+                      data-sample='{{ sample["values"]|tojson }}'>
+                {{ sample.label }}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="card card--tight">
+          <span class="eyebrow">Where to get these</span>
+          <ul class="anchor-list mt-5">
+            <li class="anchor-list__item">
+              <div class="anchor-list__body">
+                <span class="anchor-list__title">Glucose &amp; insulin</span>
+                <span class="micro">From an oral glucose tolerance test at any clinic laboratory.</span>
+              </div>
+            </li>
+            <li class="anchor-list__item">
+              <div class="anchor-list__body">
+                <span class="anchor-list__title">BMI</span>
+                <span class="micro">Weight in kilograms divided by height in metres, squared.</span>
+              </div>
+            </li>
+            <li class="anchor-list__item">
+              <div class="anchor-list__body">
+                <span class="anchor-list__title">Blood pressure</span>
+                <span class="micro">The lower of the two numbers in a standard reading.</span>
+              </div>
+            </li>
+          </ul>
+          <a class="btn btn--sm btn--block mt-5" href="{{ url_for('pages.guidelines') }}">
+            Read the thresholds
+          </a>
+        </div>
+
+        <div class="disclaimer">
+          <p class="disclaimer__text">
+            <strong>Screening, not diagnosis.</strong>
+            A result from this tool is a reason to seek a laboratory test, never a
+            substitute for one.
+          </p>
+        </div>
+
+      </aside>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/form.js') }}" defer></script>
+{% endblock %}

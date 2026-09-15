@@ -1,0 +1,101 @@
+{
+  "source_file": "pima_indians_diabetes.csv",
+  "target_column": "Outcome",
+  "feature_order": [
+    "Pregnancies",
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI",
+    "DiabetesPedigreeFunction",
+    "Age"
+  ],
+  "zero_as_missing_columns": [
+    "Glucose",
+    "BloodPressure",
+    "SkinThickness",
+    "Insulin",
+    "BMI"
+  ],
+  "audit": {
+    "total_rows": 768,
+    "zero_encoded_missing": {
+      "Glucose": 5,
+      "BloodPressure": 35,
+      "SkinThickness": 227,
+      "Insulin": 374,
+      "BMI": 11
+    },
+    "zero_encoded_missing_percent": {
+      "Glucose": 0.65,
+      "BloodPressure": 4.56,
+      "SkinThickness": 29.56,
+      "Insulin": 48.7,
+      "BMI": 1.43
+    },
+    "rows_with_any_missing": 376,
+    "class_balance": {
+      "negative_0": 500,
+      "positive_1": 268
+    }
+  },
+  "summary_statistics": {
+    "Pregnancies": {
+      "min": 0.0,
+      "max": 17.0,
+      "mean": 3.845,
+      "median": 3.0,
+      "std": 3.37
+    },
+    "Glucose": {
+      "min": 44.0,
+      "max": 199.0,
+      "mean": 121.656,
+      "median": 117.0,
+      "std": 30.438
+    },
+    "BloodPressure": {
+      "min": 24.0,
+      "max": 122.0,
+      "mean": 72.387,
+      "median": 72.0,
+      "std": 12.097
+    },
+    "SkinThickness": {
+      "min": 7.0,
+      "max": 99.0,
+      "mean": 29.108,
+      "median": 29.0,
+      "std": 8.791
+    },
+    "Insulin": {
+      "min": 14.0,
+      "max": 846.0,
+      "mean": 140.672,
+      "median": 125.0,
+      "std": 86.383
+    },
+    "BMI": {
+      "min": 18.2,
+      "max": 67.1,
+      "mean": 32.455,
+      "median": 32.3,
+      "std": 6.875
+    },
+    "DiabetesPedigreeFunction": {
+      "min": 0.078,
+      "max": 2.42,
+      "mean": 0.472,
+      "median": 0.372,
+      "std": 0.331
+    },
+    "Age": {
+      "min": 21.0,
+      "max": 81.0,
+      "mean": 33.241,
+      "median": 29.0,
+      "std": 11.76
+    }
+  }
+}

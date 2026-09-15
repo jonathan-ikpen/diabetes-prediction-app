@@ -1,0 +1,1622 @@
+/* ==========================================================================
+   COMPONENTS
+   Composed blocks built from the primitives in design-system.css.
+   Same rules apply: flat, bordered, no shadows, no gradients.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. SITE HEADER
+   -------------------------------------------------------------------------- */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  height: 76px;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  border-bottom: 0;
+  color: var(--text);
+}
+
+.brand:hover {
+  border-bottom: 0;
+}
+
+/* The institute crest. Shown bare - no box, no border - so it reads as a mark
+   rather than an icon in a chip. */
+.brand__mark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  object-fit: contain;
+}
+
+.brand__name {
+  font-family: 'Anton', sans-serif;
+  font-size: 19px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+@media (min-width: 900px) {
+  .brand__name { font-size: 24px; }
+  .brand__mark { width: 40px; height: 40px; }
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.site-nav {
+  gap: var(--space-6);
+}
+
+/* Plain text links. No pills, no boxes - the header should barely register. */
+.site-nav__link {
+  padding: 6px 0;
+  font-size: 15px;
+  font-weight: 400;
+  color: var(--muted);
+  transition: color var(--transition);
+}
+
+.site-nav__link:hover,
+.site-nav__link[aria-current='page'] {
+  color: var(--text);
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Mobile navigation ------------------------------------------------------ */
+
+.nav-toggle {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .site-nav {
+    display: none;
+    position: absolute;
+    top: 68px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-1);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+  }
+
+  .site-nav[data-open='true'] {
+    display: flex;
+  }
+
+  .site-nav__link {
+    padding: 12px 18px;
+    font-size: 15px;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .header-actions .btn--cta {
+    display: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   2. SITE FOOTER
+   Footer links stay in a horizontal row at every viewport width.
+   -------------------------------------------------------------------------- */
+
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding-block: var(--space-7);
+  margin-top: var(--space-9);
+}
+
+/* One quiet centred row, exactly like the reference. */
+.site-footer__inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2) var(--space-6);
+  flex-wrap: wrap;
+}
+
+.footer-links {
+  display: flex;
+  flex-direction: row;      /* never stacks, including on mobile */
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2) var(--space-6);
+  list-style: none;
+}
+
+.footer-links a {
+  font-size: 14px;
+  color: var(--muted);
+  border-bottom: 1px solid transparent;
+}
+
+.footer-links a:hover {
+  color: var(--text);
+  border-bottom-color: transparent;
+}
+
+.site-footer__note {
+  font-size: 14px;
+  color: var(--faint);
+}
+
+@media (max-width: 620px) {
+  .footer-links {
+    flex-direction: row;    /* restated: the mobile layout must not stack */
+    gap: var(--space-2) var(--space-4);
+  }
+
+  .footer-links a,
+  .site-footer__note {
+    font-size: 13px;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. HERO
+   Two columns on desktop: the pitch on the left, the ROC curve on the right.
+   Collapses to a single centred column on narrow screens.
+   -------------------------------------------------------------------------- */
+
+.hero {
+  padding-block: var(--space-8);
+}
+
+@media (min-width: 900px) {
+  .hero { padding-block: 100px var(--space-8); }
+}
+
+.hero__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-6);
+}
+
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.hero__title {
+  max-width: 13ch;
+  font-size: clamp(40px, 7.5vw, 96px);
+  letter-spacing: 0.01em;
+}
+
+.hero__lead {
+  max-width: 46ch;
+  font-weight: 300;
+  font-size: clamp(15px, 1.5vw, 17px);
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.hero__actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* The ROC curve. Line art, so it sits on the page with no panel behind it. */
+.hero__chart {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+}
+
+.hero__chart-caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-5);
+}
+
+.hero__chart-caption .micro {
+  max-width: 32ch;
+  text-align: left;
+}
+
+@media (min-width: 1000px) {
+  .hero__inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-8);
+    align-items: center;
+    text-align: left;
+  }
+
+  .hero__copy {
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .hero__title { max-width: 12ch; }
+  .hero__lead { max-width: 42ch; }
+  .hero__actions { justify-content: flex-start; }
+
+  .hero__chart { margin: 0; max-width: 100%; }
+  .hero__chart-caption { justify-content: flex-start; }
+
+  /* The stat strip spans both columns, under the two. */
+  .hero__stats { grid-column: 1 / -1; }
+}
+
+/* Stat strip: one soft filled band, no internal boxes. */
+.hero__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-6);
+  width: 100%;
+  margin-top: var(--space-6);
+  padding: var(--space-6) var(--space-7);
+  background: var(--fill);
+  border-radius: var(--radius-card);
+  text-align: left;
+}
+
+.hero__stat { padding: 0; }
+
+.stat__value {
+  font-family: 'Anton', sans-serif;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat__label {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   4. FEATURE / STEP CARDS
+   -------------------------------------------------------------------------- */
+
+.feature {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+
+.feature__title {
+  font-size: 17px;
+}
+
+/* Bordered list where each row is anchored by a 36px icon box. */
+.anchor-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.anchor-list__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.anchor-list__item:first-child {
+  padding-top: 0;
+}
+
+.anchor-list__item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.anchor-list__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.anchor-list__title {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+/* --------------------------------------------------------------------------
+   5. ASSESSMENT FORM
+   -------------------------------------------------------------------------- */
+
+.assess-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+@media (max-width: 940px) {
+  .assess-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.assess-aside {
+  position: sticky;
+  top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+@media (max-width: 940px) {
+  .assess-aside {
+    position: static;
+  }
+}
+
+.fieldset {
+  border: 0;
+}
+
+.fieldset + .fieldset {
+  margin-top: var(--space-7);
+  padding-top: var(--space-7);
+  border-top: 1px solid var(--line);
+}
+
+.fieldset__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: 0;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-6);
+}
+
+.form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+/* Notices: filled, not outlined. Errors carry the only border in the set,
+   because an error genuinely should interrupt. */
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--fill);
+}
+
+.alert--error {
+  background: var(--risk-high-subtle);
+  border-left: 2px solid var(--risk-high);
+  border-radius: var(--radius-card);
+}
+
+.alert__list {
+  margin-top: var(--space-2);
+  padding-left: var(--space-5);
+  font-size: 14px;
+  font-weight: 300;
+}
+
+/* --------------------------------------------------------------------------
+   6. RISK METER (result page)
+   A segmented bar. Solid fills only, no gradient.
+   -------------------------------------------------------------------------- */
+
+.result-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  gap: 0;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--fill);
+  overflow: hidden;
+}
+
+@media (max-width: 860px) {
+  .result-hero {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.result-hero__score {
+  padding: var(--space-7);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  justify-content: center;
+}
+
+@media (max-width: 860px) {
+  .result-hero__score {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+.result-hero__detail {
+  padding: var(--space-7);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  justify-content: center;
+}
+
+.score {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-family: 'Anton', sans-serif;
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.score__value {
+  font-size: clamp(56px, 11vw, 92px);
+}
+
+.score__unit {
+  font-size: clamp(20px, 4vw, 30px);
+  color: var(--muted);
+}
+
+.score--low .score__value { color: var(--risk-low); }
+.score--moderate .score__value { color: var(--risk-moderate); }
+.score--high .score__value { color: var(--risk-high); }
+
+/* Segmented meter --------------------------------------------------------- */
+
+.meter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.meter__track {
+  position: relative;
+  display: flex;
+  gap: 3px;
+  height: 10px;
+}
+
+.meter__segment {
+  flex: 1;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  transition: background var(--transition), border-color var(--transition);
+}
+
+.meter__segment[data-filled='true'] {
+  background: var(--meter-color, var(--accent));
+  border-color: var(--meter-color, var(--accent));
+}
+
+.meter--low { --meter-color: var(--risk-low); }
+.meter--moderate { --meter-color: var(--risk-moderate); }
+.meter--high { --meter-color: var(--risk-high); }
+
+.meter__scale {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+}
+
+/* Threshold ladder showing where the bands sit */
+.band-ladder {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.band-ladder__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+
+.band-ladder__row:last-child {
+  border-bottom: 0;
+}
+
+.band-ladder__row[data-active='true'] {
+  background: var(--subtle);
+  font-weight: 500;
+}
+
+.band-ladder__range {
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   7. NARRATIVE BLOCK
+   -------------------------------------------------------------------------- */
+
+.narrative__body p + p {
+  margin-top: var(--space-4);
+}
+
+.narrative__body p {
+  font-size: 16px;
+  line-height: 1.75;
+}
+
+.narrative__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+/* --------------------------------------------------------------------------
+   8. FINDINGS TABLE (result page)
+   -------------------------------------------------------------------------- */
+
+.finding-row__name {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.finding-row__clinical {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--faint);
+  margin-top: 2px;
+}
+
+.finding-row__note {
+  margin-top: 6px;
+  max-width: 340px;
+}
+
+/* Direction marker beside a metric that moved at the tuned threshold. */
+.delta--up { color: var(--risk-low); }
+.delta--down { color: var(--risk-moderate); }
+
+/* Value and unit stay together on one line. */
+.finding-row__measure {
+  white-space: nowrap;
+}
+
+.finding-row__value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Importance bar, used on the result page and the model card. */
+.impact-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 130px;
+}
+
+.impact-bar__track {
+  flex: 1;
+  height: 8px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  min-width: 60px;
+}
+
+.impact-bar__fill {
+  /* The fill is a <span>, and width/height do not apply to inline boxes.
+     Its parent is not a flex container, so it must be blockified here or the
+     server-set width silently renders nothing. */
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+}
+
+.impact-bar__value {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  width: 42px;
+  text-align: right;
+}
+
+/* --------------------------------------------------------------------------
+   9. DISCLAIMER
+   -------------------------------------------------------------------------- */
+
+.disclaimer {
+  padding: var(--space-5) var(--space-6);
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--fill);
+}
+
+.disclaimer__text {
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.disclaimer__text strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------------------
+   10. KNOWLEDGE BASE / GUIDELINES PAGE
+   No cards here. Reference material is long-form reading, and boxing every
+   parameter turned the page into a wall of containers.
+   -------------------------------------------------------------------------- */
+
+.kb-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding-bottom: var(--space-7);
+  border-bottom: 1px solid var(--line);
+}
+
+/* Parameters are separated by a single hairline, not by borders on all sides. */
+.kb-param {
+  padding-top: var(--space-8);
+}
+
+.kb-param + .kb-param {
+  margin-top: var(--space-8);
+  border-top: 1px solid var(--line);
+}
+
+.kb-param__meta {
+  margin-top: var(--space-3);
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--faint);
+}
+
+.kb-param .subtext.reading {
+  margin-top: var(--space-5);
+}
+
+.kb-param__guideline {
+  margin-top: var(--space-6);
+  padding-left: var(--space-5);
+  border-left: 2px solid var(--line-strong);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: var(--reading-width);
+}
+
+.kb-param__source {
+  display: block;
+  margin-top: var(--space-3);
+  font-size: 11px;
+  font-weight: 700;
+  font-style: normal;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+}
+
+/* Band rows ---------------------------------------------------------------
+   The label column is allowed to grow and the label itself may wrap. The old
+   version pinned a nowrap pill inside a fixed 190px column, so any long band
+   name ("Impaired Glucose Tolerance") spilled over the note beside it.        */
+
+.band-rows {
+  margin-top: var(--space-6);
+}
+
+.band-row {
+  display: grid;
+  grid-template-columns: minmax(0, 260px) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-7);
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--line);
+  align-items: start;
+}
+
+.band-row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 700px) {
+  .band-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-2);
+  }
+}
+
+.band-row__label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.band-row__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+  background: var(--muted);
+  flex: 0 0 auto;
+  transform: translateY(-1px);
+}
+
+.band-row__range {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--faint);
+}
+
+/* Severity is carried by the dot and the label colour, not by a pill. */
+.band-row--normal .band-row__dot,
+.band-row--low .band-row__dot,
+.band-row__label.band-row--low .band-row__dot { background: var(--risk-low); }
+.band-row--watch .band-row__dot,
+.band-row--moderate .band-row__dot,
+.band-row__label.band-row--moderate .band-row__dot { background: var(--risk-moderate); }
+.band-row--critical .band-row__dot,
+.band-row--high .band-row__dot,
+.band-row__label.band-row--high .band-row__dot { background: var(--risk-high); }
+
+.band-row--normal .band-row__label,
+.band-row--low .band-row__label,
+.band-row__label.band-row--low { color: var(--risk-low); }
+.band-row--watch .band-row__label,
+.band-row--moderate .band-row__label,
+.band-row__label.band-row--moderate { color: var(--risk-moderate); }
+.band-row--critical .band-row__label,
+.band-row--high .band-row__label,
+.band-row__label.band-row--high { color: var(--risk-high); }
+
+/* Plain multi-column prose. Text that needs no container.
+   At the 1200px content width (1136px inside the gutters) this resolves to two
+   columns of ~544px - a sensible reading measure, and it lays four items out as
+   a tidy 2x2 with no orphan. Packing four across here would leave 248px
+   columns, which is too narrow for body text. */
+.prose-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(400px, 100%), 1fr));
+  gap: var(--space-7);
+}
+
+/* --------------------------------------------------------------------------
+   11. MODEL CARD PAGE
+   -------------------------------------------------------------------------- */
+
+/* Same filled band as the hero stats, so the two read as one idea. */
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-6);
+  padding: var(--space-6) var(--space-7);
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--fill);
+}
+
+.metric {
+  padding: 0;
+}
+
+.metric__value {
+  font-family: 'Anton', sans-serif;
+  font-size: 28px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.metric__label {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.metric__note {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--faint);
+}
+
+/* Confusion matrix ------------------------------------------------------- */
+
+.confusion {
+  display: grid;
+  grid-template-columns: auto repeat(2, minmax(0, 1fr));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+}
+
+.confusion__cell {
+  padding: var(--space-4) var(--space-5);
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.confusion__cell:nth-child(3n) {
+  border-right: 0;
+}
+
+.confusion__cell--head {
+  background: var(--subtle);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.confusion__count {
+  font-family: 'Anton', sans-serif;
+  font-size: 24px;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.confusion__cell--good .confusion__count { color: var(--risk-low); }
+.confusion__cell--bad .confusion__count { color: var(--risk-high); }
+
+.confusion__tag {
+  display: block;
+  margin-top: var(--space-1);
+  font-size: 11px;
+  font-weight: 300;
+  color: var(--muted);
+}
+
+/* ROC curve -------------------------------------------------------------- */
+
+.chart {
+  width: 100%;
+  height: auto;
+}
+
+.chart__grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.chart__diagonal {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+  fill: none;
+}
+
+/* The area under the curve, in the brand colour. A pale wash carries the
+   colour at a size where low contrast is fine, while the line on top stays at
+   the readable shade. */
+.chart__area {
+  fill: var(--accent-subtle);
+  stroke: none;
+}
+
+.chart__curve {
+  stroke: var(--chart-line);
+  stroke-width: 2;
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/*
+  SVG text is measured in user units, not CSS pixels: the chart's viewBox is
+  122 units wide and stretches to roughly 460px, so every unit renders about
+  3.8x larger. 3 units lands near the 11px eyebrow size used elsewhere.
+*/
+.chart__label {
+  font-size: 3px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  fill: var(--faint);
+}
+
+/* Importance list -------------------------------------------------------- */
+
+.importance-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.importance-list__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 200px);
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.importance-list__row:last-child {
+  border-bottom: 0;
+}
+
+.importance-list__name {
+  font-size: 14px;
+  min-width: 0;
+}
+
+.importance-list__rank {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  margin-right: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   12. DEFINITION ROWS
+   Term on the left, explanation on the right, separated by a hairline. Used
+   for the architecture layers and the request flow - both were boxed cards
+   before, which added weight without adding meaning.
+   -------------------------------------------------------------------------- */
+
+.def-rows {
+  border-top: 1px solid var(--line);
+}
+
+.def-row {
+  display: grid;
+  grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+  gap: var(--space-3) var(--space-7);
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .def-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+}
+
+.def-row__term {
+  display: block;
+  font-family: 'Anton', sans-serif;
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.def-row__path {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: 13px;
+  color: var(--faint);
+}
+
+/* A list with no bullets and no container. */
+.plain-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* --------------------------------------------------------------------------
+   13. FAQ / DISCLOSURE
+   -------------------------------------------------------------------------- */
+
+.disclosures {
+  border-top: 1px solid var(--line);
+}
+
+.disclosure {
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+}
+
+.disclosure__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) 0;
+  cursor: pointer;
+  list-style: none;
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  border-radius: var(--radius-panel);
+}
+
+.disclosure__summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure__summary:hover {
+  color: var(--accent-strong);
+}
+
+.disclosure__icon {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  fill: none;
+  stroke-linecap: round;
+  transition: transform var(--transition);
+}
+
+.disclosure[open] .disclosure__icon {
+  transform: rotate(45deg);
+}
+
+.disclosure__content {
+  padding: 0 0 var(--space-5);
+  max-width: var(--reading-width);
+  font-weight: 300;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+/* --------------------------------------------------------------------------
+   14. CALL TO ACTION BLOCK
+   -------------------------------------------------------------------------- */
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  padding: var(--space-7) var(--space-8);
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--fill);
+}
+
+.cta__text {
+  max-width: 520px;
+}
+
+/* --------------------------------------------------------------------------
+   15. ERROR PAGES
+   -------------------------------------------------------------------------- */
+
+.error-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-5);
+  padding-block: var(--space-9);
+  min-height: 52vh;
+}
+
+.error-page__code {
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(72px, 16vw, 140px);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  color: var(--line-strong);
+}
+
+/* --------------------------------------------------------------------------
+   16. PRINT - a patient may want a paper copy of their result
+   -------------------------------------------------------------------------- */
+
+@media print {
+  .site-header,
+  .site-footer,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+    font-size: 12px;
+  }
+
+  .panel,
+  .result-hero,
+  .table-wrap {
+    border-color: #cccccc;
+    break-inside: avoid;
+  }
+
+  a {
+    color: #000000;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   17. NESTED SURFACES
+   A bordered sub-component inside a filled card would otherwise read as grey
+   on grey. These lift to the panel colour.
+   -------------------------------------------------------------------------- */
+
+.card .table-wrap,
+.card .confusion,
+.card .metric-grid,
+.card .band-ladder {
+  background: var(--panel);
+}
+
+.card .table thead th {
+  background: var(--fill);
+}
+
+/* --------------------------------------------------------------------------
+   18. INTERVIEW
+   One question at a time, for people without lab results. The question is the
+   only thing on screen, so it is set large and everything else stays quiet.
+   -------------------------------------------------------------------------- */
+
+.interview {
+  max-width: 680px;
+  margin-inline: auto;
+}
+
+.interview__bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+}
+
+.interview__track {
+  flex: 1;
+  height: 4px;
+  background: var(--fill);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.interview__fill {
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  transition: width 260ms ease;
+}
+
+.interview__count {
+  white-space: nowrap;
+  color: var(--faint);
+}
+
+.interview__step {
+  border: 0;
+  padding: 0;
+}
+
+.interview__question {
+  display: block;
+  padding: 0;
+  font-family: 'Anton', sans-serif;
+  font-size: clamp(24px, 3.4vw, 34px);
+  line-height: 1.12;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.interview__help {
+  margin-top: var(--space-4);
+  font-size: 15px;
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.interview__input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-6);
+}
+
+.interview__input .input {
+  font-size: 20px;
+  padding: 16px 26px;
+}
+
+.interview__unit {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.interview__nav {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-7);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--line);
+}
+
+/* Supporting note under the interview. No container: it is just text, set on
+   the same measure as the questions and pushed well clear of the form so it
+   cannot be mistaken for part of the current question. */
+.interview__note {
+  max-width: 680px;
+  margin: var(--space-9) auto 0;
+}
+
+/* Answer options -----------------------------------------------------------
+   Full-width pills. The radio itself is hidden and the label carries the
+   state, so the whole row is a target.                                       */
+
+.choice-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.choice {
+  display: block;
+  cursor: pointer;
+}
+
+.choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.choice__label {
+  display: block;
+  padding: 16px 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 16px;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.choice:hover .choice__label {
+  border-color: var(--line-strong);
+}
+
+.choice input:focus-visible + .choice__label {
+  border-color: var(--accent-line);
+}
+
+.choice input:checked + .choice__label {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Without JavaScript every question shows at once, so each needs separating. */
+.interview__step + .interview__step {
+  margin-top: var(--space-8);
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--line);
+}
+
+/* With JavaScript only one is visible, so that rule must not apply. */
+.interview__step[hidden] + .interview__step {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* --------------------------------------------------------------------------
+   19. FLOATING ASSISTANT
+   -------------------------------------------------------------------------- */
+
+.chatbot {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 80;
+  display: flex;
+  /*
+    column-reverse, not column. The container is pinned by its bottom edge and
+    grows upward, so with plain `column` the launcher - being first in the DOM -
+    was carried to the top of the stack and the panel hung below it. Reversing
+    the visual order keeps the launcher in the corner where it was pressed and
+    opens the panel above it, while leaving the DOM order as trigger-then-dialog
+    for tab order and screen readers.
+  */
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  gap: var(--space-4);
+}
+
+.chatbot__launcher {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.chatbot__launcher:hover { background: var(--accent-hover); }
+
+.chatbot__launcher:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+.chatbot__launcher-icon { display: inline-flex; }
+
+.chatbot__launcher-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Panel ------------------------------------------------------------------- */
+
+.chatbot__panel {
+  display: flex;
+  flex-direction: column;
+  width: min(380px, calc(100vw - var(--space-6)));
+  height: min(560px, calc(100vh - 140px));
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+}
+
+.chatbot__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border-bottom: 1px solid var(--line);
+}
+
+.chatbot__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex: 0 0 auto;
+}
+
+.chatbot__title {
+  font-family: 'Anton', sans-serif;
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.chatbot__sub {
+  margin-top: var(--space-1);
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--faint);
+}
+
+/* Log --------------------------------------------------------------------- */
+
+.chatbot__log {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.chatbot__msg {
+  max-width: 88%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.chatbot__msg p + p {
+  margin-top: var(--space-3);
+}
+
+.chatbot__msg--bot {
+  align-self: flex-start;
+  background: var(--fill);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+
+.chatbot__msg--user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-bottom-right-radius: 4px;
+}
+
+.chatbot__msg--pending {
+  color: var(--faint);
+  animation: chatbot-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes chatbot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+/* The score, rendered from the model's own numbers rather than the prose. */
+.chatbot__result {
+  align-self: flex-start;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.chatbot__result-value {
+  font-family: 'Anton', sans-serif;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+.chatbot__result-band {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.chatbot__result--low .chatbot__result-value { color: var(--risk-low); }
+.chatbot__result--moderate .chatbot__result-value { color: var(--risk-moderate); }
+.chatbot__result--high .chatbot__result-value { color: var(--risk-high); }
+
+/* Composer ---------------------------------------------------------------- */
+
+.chatbot__form {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--line);
+}
+
+.chatbot__input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 18px;
+  font-size: 14px;
+}
+
+.chatbot__send {
+  padding: 11px 20px;
+  font-size: 14px;
+  flex: 0 0 auto;
+}
+
+/* The log scrolls, so it gets the thin bar rather than the native slab. */
+.chatbot__log::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chatbot__foot {
+  padding: 0 var(--space-5) var(--space-4);
+  font-size: 11px;
+  font-weight: 300;
+  line-height: 1.5;
+  color: var(--faint);
+}
+
+@media (max-width: 480px) {
+  .chatbot { right: var(--space-4); bottom: var(--space-4); }
+  .chatbot__panel { height: min(70vh, calc(100vh - 120px)); }
+}
+
+/* A floating widget is screen furniture, not part of the document. */
+@media print {
+  .chatbot { display: none !important; }
+}

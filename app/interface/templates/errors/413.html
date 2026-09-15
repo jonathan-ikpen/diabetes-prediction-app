@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="shell">
+  <div class="error-page">
+    <span class="error-page__code">413</span>
+    <span class="eyebrow">Request too large</span>
+    <h1>That submission was too big</h1>
+    <p class="lead text-center">
+      The assessment expects eight short numbers. Anything substantially larger is
+      rejected before it reaches the model.
+    </p>
+    <a class="btn btn--primary" href="{{ url_for('pages.assess') }}">
+      Back to the form
+    </a>
+  </div>
+</div>
+{% endblock %}

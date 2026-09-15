@@ -1,0 +1,24 @@
+<footer class="site-footer">
+  <div class="shell">
+
+    <div class="disclaimer no-print">
+      <p class="disclaimer__text">
+        <strong>Not a medical diagnosis.</strong>
+        {{ disclaimer }}
+      </p>
+    </div>
+
+    {# One quiet centred row. Links stay horizontal at every viewport width. #}
+    <nav class="site-footer__inner mt-7" aria-label="Footer navigation">
+      <ul class="footer-links">
+        {% for item in nav_items %}
+          <li><a href="{{ url_for(item.endpoint) }}">{{ item.label }}</a></li>
+        {% endfor %}
+        <li><a href="{{ url_for('pages.check') }}">Check my risk</a></li>
+        <li><a href="{{ url_for('pages.health') }}">AI status</a></li>
+      </ul>
+      <span class="site-footer__note">&copy; {{ current_year }} {{ app_name }}</span>
+    </nav>
+
+  </div>
+</footer>

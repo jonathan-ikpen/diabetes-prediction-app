@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}Estimate diabetes risk from eight routine clinical measurements. A Random Forest model produces the probability; a language model grounded in WHO and IDF guidance explains it in plain language.{% endblock %}
+
+{% block content %}
+
+{# ---------------------------------------------------------------- HERO -- #}
+<section class="hero">
+  <div class="shell hero__inner">
+
+    <div class="hero__copy">
+      <h1 class="hero__title">Know your diabetes risk</h1>
+
+      <p class="hero__lead">
+        Type 2 diabetes is silent for years while damage accumulates. Answer a few simple
+        questions and find out whether it is worth getting a blood test.
+      </p>
+
+      <div class="hero__actions">
+        <a class="btn btn--primary btn--lg" href="{{ url_for('pages.check') }}">
+          Check my risk
+        </a>
+        <a class="btn btn--lg" href="{{ url_for('pages.assess') }}">
+          I have my lab results
+        </a>
+      </div>
+    </div>
+
+    {% if not model_ready %}
+      <div class="alert alert--error mt-6 text-left">
+        <div>
+          <strong>The model has not been trained yet.</strong>
+          <p class="subtext">
+            Run <code>python -m training.train</code> to generate
+            <code>training/model/model.pkl</code>, then reload this page.
+          </p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if roc_curve %}
+      <figure class="hero__chart">
+        <svg class="chart" viewBox="-14 -8 122 122" role="img"
+             aria-label="ROC curve with an area under the curve of {{ '%.3f'|format(roc_auc) }}">
+          <g class="chart__grid">
+            {% for tick in [0, 25, 50, 75, 100] %}
+              <line x1="0" y1="{{ tick }}" x2="100" y2="{{ tick }}"/>
+              <line x1="{{ tick }}" y1="0" x2="{{ tick }}" y2="100"/>
+            {% endfor %}
+          </g>
+
+          <polygon class="chart__area"
+                   points="0,100 {% for point in roc_curve %}{{ (point.fpr * 100)|round(2) }},{{ (100 - point.tpr * 100)|round(2) }} {% endfor %}100,100"/>
+
+          <line class="chart__diagonal" x1="0" y1="100" x2="100" y2="0"/>
+
+          <polyline class="chart__curve"
+                    points="{% for point in roc_curve %}{{ (point.fpr * 100)|round(2) }},{{ (100 - point.tpr * 100)|round(2) }} {% endfor %}"/>
+
+          <text class="chart__label" x="50" y="114" text-anchor="middle">False positive rate</text>
+          <text class="chart__label" x="-6" y="50" text-anchor="middle"
+                transform="rotate(-90 -6 50)">Sensitivity</text>
+        </svg>
+
+        <figcaption class="hero__chart-caption">
+          <span class="badge">AUC {{ '%.3f'|format(roc_auc) }}</span>
+          <span class="micro">How well the model separates at-risk from not. Random guessing scores 0.500.</span>
+        </figcaption>
+      </figure>
+    {% endif %}
+
+    {# Live figures, read from the trained model's evaluation report. #}
+    <div class="hero__stats">
+      <div class="hero__stat">
+        <span class="stat__value numeric">{{ '%.3f'|format(metrics.get('roc_auc', 0)) }}</span>
+        <span class="stat__label">ROC-AUC</span>
+      </div>
+      <div class="hero__stat">
+        <span class="stat__value numeric">{{ (metrics.get('recall', 0) * 100)|round|int }}%</span>
+        <span class="stat__label">Sensitivity</span>
+      </div>
+      <div class="hero__stat">
+        <span class="stat__value numeric">{{ dataset.get('rows', 768) }}</span>
+        <span class="stat__label">Training records</span>
+      </div>
+      <div class="hero__stat">
+        <span class="stat__value numeric">8</span>
+        <span class="stat__label">Clinical inputs</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{# ------------------------------------------------------- HOW IT WORKS -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">How it works</span>
+      <h2>Three steps, under a minute</h2>
+      <p class="lead">
+        No account, no upload, nothing stored. Measurements are scored in memory and
+        discarded when you close the page.
+      </p>
+    </div>
+
+    <div class="card-list card-list--cols">
+      {% for step in [
+        {'n': '01', 'title': 'Enter your measurements',
+         'body': 'Eight values a primary health centre can already obtain: plasma glucose, blood pressure, BMI, serum insulin, skinfold thickness, age, pregnancies and family history.'},
+        {'n': '02', 'title': 'The model scores them',
+         'body': 'A Random Forest trained on 768 clinical records returns a probability, then places it in a low, moderate or high risk band against WHO thresholds.'},
+        {'n': '03', 'title': 'You get a plain explanation',
+         'body': 'A language model, handed only the WHO and IDF thresholds this tool holds, writes what the result means and what to do next. It is never asked to recall a medical fact.'}
+      ] %}
+        <article class="card-list__row">
+          <span class="eyebrow">Step {{ step.n }}</span>
+          <h3>{{ step.title }}</h3>
+          <p class="subtext reading">{{ step.body }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------ ARCHITECTURE -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Hybrid architecture</span>
+      <h2>Numbers from the model, meaning from the guidelines</h2>
+      <p class="lead">
+        A statistical model can produce a number but cannot explain it safely. A language
+        model can explain but should not be trusted to recall clinical thresholds. This
+        system separates the two jobs.
+      </p>
+    </div>
+
+    <div class="card-list card-list--cols">
+      {% for layer in [
+        {'name': 'Knowledge base', 'path': 'app/knowledgebase',
+         'body': 'Every WHO and IDF cut-off for all eight parameters, held as data in a single file. Each threshold the system uses is read from there - never hardcoded, never recalled from a model.'},
+        {'name': 'Inference engine', 'path': 'app/engine',
+         'body': 'Validates the eight inputs, scores them with the serialised Random Forest, and reads each value against the knowledge base. Fully deterministic: the same input always gives the same result.'},
+        {'name': 'Narrative layer', 'path': 'app/engine/narrative.py',
+         'body': 'Receives the model output and the relevant guideline text, then writes three plain paragraphs. If no API key is set or the provider fails, the same explanation is composed from the knowledge base directly.'}
+      ] %}
+        <article class="card-list__row">
+          <span class="eyebrow">{{ layer.path }}</span>
+          <h3>{{ layer.name }}</h3>
+          <p class="subtext reading">{{ layer.body }}</p>
+        </article>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+
+{# -------------------------------------------------------- LIMITATIONS -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Read this first</span>
+      <h2>What this tool is not</h2>
+    </div>
+
+    <div class="card-list card-list--cols">
+      {% for item in [
+        {'title': 'Not a diagnosis',
+         'body': 'A diagnosis of diabetes requires a laboratory-confirmed glucose or HbA1c measurement, repeated on a separate day. This tool cannot do that and does not try to.'},
+        {'title': 'Trained on one cohort',
+         'body': 'The underlying dataset records adult women of Pima Indian heritage. Risk patterns in Nigerian populations differ, so the probability should be read as a prompt to get tested, not as a personal prediction.'},
+        {'title': 'Nothing is stored',
+         'body': 'Measurements are scored in memory and never written to a database, a log file, or a cookie. Closing the page destroys them.'}
+      ] %}
+        <article class="card-list__row">
+          <h3>{{ item.title }}</h3>
+          <p class="subtext reading">{{ item.body }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ----------------------------------------------------------------- CTA -- #}
+<section class="section section--tight">
+  <div class="shell">
+    <div class="cta">
+      <div class="cta__text stack stack--sm">
+        <h3>Eight numbers. One minute.</h3>
+        <p class="subtext">
+          If you have a recent glucose reading and know your height and weight, you have
+          most of what the assessment needs.
+        </p>
+      </div>
+      <a class="btn btn--primary btn--lg" href="{{ url_for('pages.assess') }}">
+        Start the assessment
+      </a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

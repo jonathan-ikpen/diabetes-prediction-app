@@ -1,0 +1,29 @@
+{#
+  Inline SVG icon set.
+
+  Deliberately tiny: the interface uses icons only where one carries meaning
+  (the brand mark, the theme toggle, the mobile menu). Decorative icons were
+  removed - they made every list look like a dashboard.
+
+  Kept as a Jinja macro rather than an icon font or sprite file so icons inherit
+  `currentColor`, need no extra network request, and stay inside the
+  `script-src 'self'` content security policy.
+
+  Usage:  {% raw %}{{ icon('pulse') }}{% endraw %}
+          {% raw %}{{ icon('shield', 'my-extra-class') }}{% endraw %}
+
+  Every path is drawn on a 24x24 grid with no fill; stroke width and colour come
+  from the parent (.icon-box, .btn) via CSS.
+#}
+
+{%- set ICON_PATHS = {
+  'pulse':      '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  'sun':        '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>',
+  'moon':       '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+  'menu':       '<path d="M3 6h18M3 12h18M3 18h18"/>',
+  'close':      '<path d="M18 6 6 18M6 6l12 12"/>'
+} -%}
+
+{% macro icon(name, extra_class='') -%}
+<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"{% if extra_class %} class="{{ extra_class }}"{% endif %}>{{ ICON_PATHS.get(name, ICON_PATHS['info']) | safe }}</svg>
+{%- endmacro %}

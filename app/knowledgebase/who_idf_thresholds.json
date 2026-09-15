@@ -1,0 +1,201 @@
+{
+  "schema_version": "1.0",
+  "title": "WHO / IDF Clinical Reference Thresholds for Diabetes Screening",
+  "last_reviewed": "2026-08-26",
+  "scope_note": "Cut-off values used to interpret the 8 clinical parameters accepted by this application. These are screening-interpretation aids, not diagnostic criteria. A clinical diagnosis of diabetes requires laboratory confirmation by a licensed practitioner.",
+
+  "risk_bands": [
+    {
+      "id": "low",
+      "label": "Low Risk",
+      "min_probability": 0.0,
+      "max_probability": 0.35,
+      "summary": "Measured parameters are broadly consistent with people who did not develop diabetes in the reference cohort.",
+      "action": "Maintain current diet and physical activity. Re-screen every 3 years, or annually from age 45."
+    },
+    {
+      "id": "moderate",
+      "label": "Moderate Risk",
+      "min_probability": 0.35,
+      "max_probability": 0.65,
+      "summary": "Several parameters sit in an intermediate range associated with impaired glucose regulation.",
+      "action": "Request a fasting plasma glucose or HbA1c test at a registered clinic within the next 3 months. Begin structured lifestyle modification now."
+    },
+    {
+      "id": "high",
+      "label": "High Risk",
+      "min_probability": 0.65,
+      "max_probability": 1.01,
+      "summary": "The parameter profile closely matches people diagnosed with diabetes in the reference cohort.",
+      "action": "Seek clinical assessment promptly. Ask specifically for a fasting plasma glucose, an oral glucose tolerance test, or an HbA1c measurement."
+    }
+  ],
+
+  "parameters": {
+    "Pregnancies": {
+      "display_name": "Number of Pregnancies",
+      "unit": "count",
+      "clinical_name": "Parity",
+      "input_range": [0, 20],
+      "measurement_note": "Total number of times the patient has been pregnant.",
+      "is_diagnostic": false,
+      "bands": [
+        { "id": "typical", "label": "Typical", "severity": "normal", "max": 5, "note": "Parity in this range carries no independent elevation of diabetes risk." },
+        { "id": "elevated", "label": "High Parity", "severity": "watch", "min": 5, "note": "High parity is associated with increased lifetime metabolic load and a greater chance of prior gestational diabetes." }
+      ],
+      "guideline": "WHO recognises a history of gestational diabetes mellitus (GDM) as a major risk factor for later type 2 diabetes. Women with prior GDM should be screened at least every 3 years for life.",
+      "source": "WHO, Diagnostic Criteria and Classification of Hyperglycaemia First Detected in Pregnancy (2013)"
+    },
+
+    "Glucose": {
+      "display_name": "Plasma Glucose",
+      "unit": "mg/dL",
+      "clinical_name": "2-hour plasma glucose during an oral glucose tolerance test (OGTT)",
+      "input_range": [40, 300],
+      "measurement_note": "Measured 2 hours after a 75 g oral glucose load. This is the single strongest predictor in the model.",
+      "is_diagnostic": true,
+      "bands": [
+        { "id": "normal", "label": "Normal Glucose Tolerance", "severity": "normal", "max": 140, "note": "Below 140 mg/dL (7.8 mmol/L)." },
+        { "id": "igt", "label": "Impaired Glucose Tolerance", "severity": "watch", "min": 140, "max": 200, "note": "140-199 mg/dL (7.8-11.0 mmol/L). Classified by WHO as intermediate hyperglycaemia, commonly called prediabetes." },
+        { "id": "diabetic_range", "label": "Diabetes Range", "severity": "critical", "min": 200, "note": "200 mg/dL (11.1 mmol/L) or above. Meets the WHO 2-hour OGTT threshold for diabetes and requires confirmatory testing." }
+      ],
+      "guideline": "WHO defines diabetes at a 2-hour post-load plasma glucose of 11.1 mmol/L (200 mg/dL) or above, and impaired glucose tolerance between 7.8 and 11.0 mmol/L (140-199 mg/dL). A single abnormal result must be confirmed on a separate day in a person without symptoms.",
+      "source": "WHO/IDF, Definition and Diagnosis of Diabetes Mellitus and Intermediate Hyperglycaemia (2006); WHO Classification of Diabetes Mellitus (2019)"
+    },
+
+    "BloodPressure": {
+      "display_name": "Diastolic Blood Pressure",
+      "unit": "mm Hg",
+      "clinical_name": "Diastolic arterial pressure",
+      "input_range": [30, 140],
+      "measurement_note": "The lower number in a blood pressure reading. This dataset records diastolic pressure only, so a full hypertension classification is not possible from this field alone.",
+      "is_diagnostic": false,
+      "bands": [
+        { "id": "normal", "label": "Normal", "severity": "normal", "max": 80, "note": "Below 80 mm Hg diastolic." },
+        { "id": "high_normal", "label": "High-Normal", "severity": "watch", "min": 80, "max": 90, "note": "80-89 mm Hg. Frequently accompanies insulin resistance as part of the metabolic syndrome." },
+        { "id": "hypertension", "label": "Hypertensive Range", "severity": "critical", "min": 90, "note": "90 mm Hg or above. Consistent with hypertension, which multiplies the cardiovascular risk carried by diabetes." }
+      ],
+      "guideline": "WHO defines hypertension as a systolic pressure of 140 mm Hg or above and/or a diastolic pressure of 90 mm Hg or above, measured on two separate days. Hypertension and type 2 diabetes share insulin resistance as a common driver and frequently occur together.",
+      "source": "WHO Guideline for the Pharmacological Treatment of Hypertension in Adults (2021)"
+    },
+
+    "SkinThickness": {
+      "display_name": "Triceps Skinfold Thickness",
+      "unit": "mm",
+      "clinical_name": "Triceps skinfold",
+      "input_range": [5, 100],
+      "measurement_note": "A caliper measurement of subcutaneous fat at the back of the upper arm, used as a proxy for body fat distribution.",
+      "is_diagnostic": false,
+      "bands": [
+        { "id": "normal", "label": "Within Typical Range", "severity": "normal", "max": 30, "note": "Consistent with typical subcutaneous adiposity." },
+        { "id": "elevated", "label": "Elevated Adiposity", "severity": "watch", "min": 30, "max": 45, "note": "Suggests excess subcutaneous fat, which contributes to peripheral insulin resistance." },
+        { "id": "high", "label": "High Adiposity", "severity": "critical", "min": 45, "note": "Markedly elevated subcutaneous fat store." }
+      ],
+      "guideline": "Skinfold thickness is not a WHO diagnostic criterion. It is used here as a supporting measure of adiposity alongside BMI, because body fat distribution modifies insulin sensitivity independently of total weight.",
+      "source": "Contextual reference; not a diagnostic threshold."
+    },
+
+    "Insulin": {
+      "display_name": "Serum Insulin",
+      "unit": "µU/mL",
+      "clinical_name": "2-hour serum insulin",
+      "input_range": [10, 900],
+      "measurement_note": "Serum insulin measured 2 hours after a glucose load. High values alongside high glucose indicate insulin resistance rather than insulin deficiency.",
+      "is_diagnostic": false,
+      "bands": [
+        { "id": "low", "label": "Low", "severity": "watch", "max": 30, "note": "Below the usual post-load response. May indicate reduced pancreatic beta-cell output." },
+        { "id": "normal", "label": "Typical Post-Load Response", "severity": "normal", "min": 30, "max": 166, "note": "Roughly 16-166 µU/mL is the commonly cited 2-hour reference interval." },
+        { "id": "hyperinsulinaemia", "label": "Hyperinsulinaemia", "severity": "critical", "min": 166, "note": "A raised insulin level indicates the pancreas is compensating for peripheral insulin resistance, which often precedes type 2 diabetes by years." }
+      ],
+      "guideline": "There is no WHO diagnostic cut-off for serum insulin, and the reference interval is laboratory-dependent. Persistent hyperinsulinaemia alongside normal glucose is an early marker of insulin resistance and precedes measurable hyperglycaemia.",
+      "source": "Laboratory reference interval; not a WHO diagnostic threshold."
+    },
+
+    "BMI": {
+      "display_name": "Body Mass Index",
+      "unit": "kg/m2",
+      "clinical_name": "Body Mass Index",
+      "input_range": [12, 70],
+      "measurement_note": "Weight in kilograms divided by the square of height in metres. WHO standard cut-offs apply to African populations; the lower Asian-specific cut-offs are not used here.",
+      "is_diagnostic": false,
+      "bands": [
+        { "id": "underweight", "label": "Underweight", "severity": "watch", "max": 18.5, "note": "Below 18.5 kg/m2." },
+        { "id": "normal", "label": "Healthy Weight", "severity": "normal", "min": 18.5, "max": 25, "note": "18.5-24.9 kg/m2." },
+        { "id": "overweight", "label": "Overweight", "severity": "watch", "min": 25, "max": 30, "note": "25.0-29.9 kg/m2. Risk of type 2 diabetes begins to rise steeply in this band." },
+        { "id": "obese_i", "label": "Obesity Class I", "severity": "critical", "min": 30, "max": 35, "note": "30.0-34.9 kg/m2." },
+        { "id": "obese_ii", "label": "Obesity Class II", "severity": "critical", "min": 35, "max": 40, "note": "35.0-39.9 kg/m2." },
+        { "id": "obese_iii", "label": "Obesity Class III", "severity": "critical", "min": 40, "note": "40.0 kg/m2 or above." }
+      ],
+      "guideline": "WHO classifies overweight as a BMI of 25 kg/m2 or above and obesity as 30 kg/m2 or above. Excess adiposity is the largest modifiable risk factor for type 2 diabetes. A sustained loss of 5-7% of body weight measurably reduces progression from prediabetes to diabetes.",
+      "source": "WHO, Obesity and Overweight Fact Sheet; WHO Technical Report Series 894"
+    },
+
+    "DiabetesPedigreeFunction": {
+      "display_name": "Diabetes Pedigree Function",
+      "unit": "score",
+      "clinical_name": "Family history score",
+      "input_range": [0.05, 2.5],
+      "measurement_note": "A synthesised score summarising diabetes history among relatives, weighted by genetic relatedness and the age at which those relatives were diagnosed. It is specific to this dataset, not a laboratory test.",
+      "is_diagnostic": false,
+      "bands": [
+        { "id": "low", "label": "Limited Family History", "severity": "normal", "max": 0.4, "note": "Little recorded diabetes among close relatives." },
+        { "id": "moderate", "label": "Moderate Family History", "severity": "watch", "min": 0.4, "max": 0.9, "note": "Diabetes present among relatives, contributing measurable inherited risk." },
+        { "id": "strong", "label": "Strong Family History", "severity": "critical", "min": 0.9, "note": "Substantial diabetes history among close relatives, or early-onset diagnoses." }
+      ],
+      "guideline": "A first-degree relative with type 2 diabetes roughly doubles a person's lifetime risk. IDF guidance places family history among the core non-modifiable risk factors used to trigger earlier screening.",
+      "source": "Smith et al., ADAP learning algorithm (1988); IDF risk factor guidance"
+    },
+
+    "Age": {
+      "display_name": "Age",
+      "unit": "years",
+      "clinical_name": "Age",
+      "input_range": [18, 100],
+      "measurement_note": "Age in completed years. Beta-cell function declines gradually with age, independently of weight.",
+      "is_diagnostic": false,
+      "bands": [
+        { "id": "young", "label": "Under 35", "severity": "normal", "max": 35, "note": "Background population risk, unless other risk factors are present." },
+        { "id": "midlife", "label": "35 to 44", "severity": "watch", "min": 35, "max": 45, "note": "Incidence begins to climb from the mid-thirties onward." },
+        { "id": "older", "label": "45 and above", "severity": "critical", "min": 45, "note": "Routine screening is recommended from age 45 regardless of other risk factors." }
+      ],
+      "guideline": "Diabetes incidence rises with age. Screening is recommended from age 45 for the general population, and earlier where overweight, hypertension, or a family history of diabetes are present.",
+      "source": "IDF Global Guideline for Type 2 Diabetes; WHO screening guidance"
+    }
+  },
+
+  "general_guidance": [
+    {
+      "id": "confirmation",
+      "title": "Confirm before concluding",
+      "body": "No screening score is a diagnosis. WHO requires a laboratory-confirmed fasting plasma glucose, a 2-hour OGTT value, or an HbA1c measurement, repeated on a separate day in a person without symptoms, before diabetes can be diagnosed."
+    },
+    {
+      "id": "lifestyle",
+      "title": "Lifestyle modification is first-line",
+      "body": "WHO recommends at least 150 minutes of moderate-intensity physical activity per week, a diet limiting free sugars to under 10% of total energy intake, and a sustained 5-7% reduction in body weight for people carrying excess weight. Structured lifestyle programmes reduce progression from prediabetes to diabetes by roughly half."
+    },
+    {
+      "id": "tobacco",
+      "title": "Tobacco and alcohol",
+      "body": "Tobacco use increases the risk of type 2 diabetes and accelerates its vascular complications. WHO advises cessation of tobacco use and moderation of alcohol intake as part of diabetes prevention."
+    },
+    {
+      "id": "complications",
+      "title": "Undiagnosed diabetes causes silent damage",
+      "body": "Type 2 diabetes is frequently without symptoms for years while damage accumulates in the retina, kidneys, and peripheral nerves. Early detection is the primary reason screening exists."
+    }
+  ],
+
+  "regional_context": {
+    "region": "Nigeria / Sub-Saharan Africa",
+    "notes": [
+      "The IDF Diabetes Atlas estimates several million adults living with diabetes in Nigeria, and reports that Africa has the highest proportion of undiagnosed diabetes of any IDF region - the majority of cases are never identified.",
+      "Laboratory access is uneven outside major urban centres, so low-cost screening that runs on parameters obtainable at a primary health centre has practical value.",
+      "Rising urbanisation, reduced physical activity, and dietary transition are increasing type 2 diabetes incidence across West Africa.",
+      "WHO standard BMI cut-offs (overweight 25, obesity 30) apply to African populations. The lower Asian-specific cut-offs should not be substituted."
+    ],
+    "source": "IDF Diabetes Atlas; WHO Regional Office for Africa. Figures are indicative and should be checked against the current Atlas edition before citation."
+  },
+
+  "disclaimer": "This application is a statistical screening aid built for educational and early-detection purposes. It does not diagnose diabetes, does not replace a qualified clinician, and must not be used to start, stop, or alter any treatment. Anyone with symptoms or an elevated result should consult a licensed healthcare professional."
+}

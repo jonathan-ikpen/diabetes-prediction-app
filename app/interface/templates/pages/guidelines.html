@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}Every WHO and IDF threshold this tool uses, with its source. Glucose, BMI, blood pressure, insulin and the other five parameters.{% endblock %}
+
+{#
+  Renders a band's numeric interval. Bands use half-open [min, max) intervals,
+  and either bound may be absent for the first and last band.
+#}
+{% macro band_range(band, unit) -%}
+  {%- set suffix = '' if unit in ('count', 'score') else ' ' ~ unit -%}
+  {%- if band.min is not defined and band.max is defined -%}
+    Below {{ band.max }}{{ suffix }}
+  {%- elif band.min is defined and band.max is not defined -%}
+    {{ band.min }}{{ suffix }} and above
+  {%- elif band.min is defined and band.max is defined -%}
+    {{ band.min }} &ndash; {{ band.max }}{{ suffix }}
+  {%- else -%}
+    Any value
+  {%- endif -%}
+{%- endmacro %}
+
+{% block content %}
+<section class="section">
+  <div class="shell">
+
+    <div class="section-head section-head--page">
+      <h1>Clinical reference</h1>
+      <p class="lead">
+        Every threshold this tool applies is listed here with its source. These values are
+        held as data in a single file, so the model, the interface, and the AI explanation
+        all read the same numbers. Nothing is recalled from a language model's memory.
+      </p>
+    </div>
+
+    <p class="subtext reading">{{ reference.raw.scope_note }}</p>
+
+    {# ------------------------------------------------------- QUICK INDEX #}
+    <nav class="kb-nav mt-7" aria-label="Parameter index">
+      {% for key, spec in parameters %}
+        <a class="btn btn--sm" href="#param-{{ key }}">{{ spec.display_name }}</a>
+      {% endfor %}
+      <a class="btn btn--sm" href="#risk-bands">Risk bands</a>
+      <a class="btn btn--sm" href="#general">General guidance</a>
+    </nav>
+
+    {# --------------------------------------------------------- PARAMETERS #}
+    {% for key, spec in parameters %}
+      <article class="kb-param" id="param-{{ key }}">
+
+        <h2>{{ spec.display_name }}</h2>
+
+        <p class="kb-param__meta">
+          {% if spec.clinical_name != spec.display_name %}{{ spec.clinical_name }} &middot; {% endif %}
+          accepted {{ spec.input_range[0] }}&ndash;{{ spec.input_range[1] }}{{ '' if spec.unit in ('count', 'score') else ' ' ~ spec.unit }}
+          &middot;
+          {{ 'WHO diagnostic criterion' if spec.is_diagnostic else 'supporting measure' }}
+        </p>
+
+        <p class="subtext reading">{{ spec.measurement_note }}</p>
+
+        <div class="band-rows">
+          {% for band in spec.bands %}
+            <div class="band-row band-row--{{ band.severity }}">
+              <div>
+                <span class="band-row__label">
+                  <span class="band-row__dot"></span>{{ band.label }}
+                </span>
+                <span class="band-row__range numeric">{{ band_range(band, spec.unit) }}</span>
+              </div>
+              <p class="subtext">{{ band.note }}</p>
+            </div>
+          {% endfor %}
+        </div>
+
+        <p class="kb-param__guideline">
+          {{ spec.guideline }}
+          <cite class="kb-param__source">{{ spec.source }}</cite>
+        </p>
+
+      </article>
+    {% endfor %}
+
+  </div>
+</section>
+
+{# --------------------------------------------------------- RISK BANDS -- #}
+<section class="section" id="risk-bands">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Interpretation</span>
+      <h2>How probabilities map to bands</h2>
+      <p class="lead">
+        The model returns a probability between 0 and 1. These bands turn that number into
+        an action.
+      </p>
+    </div>
+
+    <div class="card-list card-list--cols">
+      {% for band in reference.risk_bands %}
+        <article class="card-list__row">
+          <span class="band-row__label band-row--{{ band.id }}">
+            <span class="band-row__dot"></span>{{ band.label }}
+          </span>
+          <span class="band-row__range numeric">
+            {{ (band.min_probability * 100) | round | int }}% &ndash;
+            {{ ([band.max_probability, 1.0] | min * 100) | round | int }}% probability
+          </span>
+          <p class="subtext mt-3">{{ band.summary }}</p>
+          <p class="subtext mt-4"><strong>What to do:</strong> {{ band.action }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ---------------------------------------------------- GENERAL GUIDANCE -- #}
+<section class="section" id="general">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Applies to everyone</span>
+      <h2>General WHO guidance</h2>
+    </div>
+
+    <div class="prose-cols">
+      {% for item in reference.general_guidance %}
+        <div>
+          <h3>{{ item.title }}</h3>
+          <p class="subtext mt-3">{{ item.body }}</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    {# ------------------------------------------------- REGIONAL CONTEXT #}
+    <div class="kb-param mt-7">
+      <h2>{{ reference.regional_context.region }}</h2>
+      <p class="kb-param__meta">Regional context</p>
+
+      <div class="prose-cols mt-5">
+        {% for note in reference.regional_context.notes %}
+          <p class="subtext">{{ note }}</p>
+        {% endfor %}
+      </div>
+
+      <p class="micro mt-6">{{ reference.regional_context.source }}</p>
+    </div>
+
+    <div class="disclaimer mt-7">
+      <p class="disclaimer__text">
+        <strong>Reference only.</strong> {{ reference.disclaimer }}
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

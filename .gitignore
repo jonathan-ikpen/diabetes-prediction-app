@@ -1,0 +1,47 @@
+# --- Secrets ---------------------------------------------------------------
+# Never commit real API keys. `.env.example` is the committed template.
+.env
+.env.*
+!.env.example
+
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Virtual environments --------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+
+# --- Testing and tooling ---------------------------------------------------
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Editors and OS --------------------------------------------------------
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Project artefacts -----------------------------------------------------
+# The trained model and its reports ARE committed on purpose: the app needs
+# training/model/model.pkl to run, and the Model Card page renders the JSON
+# reports. Regenerate all three with `python -m training.train`.
+#
+# Transient files from the pipeline are not committed:
+training/data/raw/*.download.tmp
+*.log

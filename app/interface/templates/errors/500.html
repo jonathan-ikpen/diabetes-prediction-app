@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="shell">
+  <div class="error-page">
+    <span class="error-page__code">500</span>
+    <span class="eyebrow">Server error</span>
+    <h1>Something went wrong</h1>
+    <p class="lead text-center">
+      An unexpected error interrupted your request. Nothing you entered was saved. Try
+      the assessment again &mdash; if it keeps failing, the server log will have the detail.
+    </p>
+    <div class="row row--center">
+      <a class="btn btn--primary" href="{{ url_for('pages.assess') }}">
+        Try again
+      </a>
+      <a class="btn" href="{{ url_for('pages.index') }}">Back to home</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

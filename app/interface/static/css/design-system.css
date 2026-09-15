@@ -1,0 +1,1034 @@
+/* ==========================================================================
+   DESIGN SYSTEM
+   Diabetes Risk Prediction Web App
+
+   A flat, bordered, minimalist system inspired by Notion, Linear and Vercel.
+
+   Hard rules enforced throughout this file:
+     - No box-shadows. Depth comes from 1px borders only.
+     - No gradients. Solid colours only.
+     - No blur, no translucency, no glassmorphism.
+     - No CSS framework. Everything here is hand-written.
+     - Light-mode canvas is pure #ffffff.
+     - Structure is expressed with `1px solid var(--line)`.
+     - Panels: radius 8px. Buttons and inputs: radius 9999px. Never mixed.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. FONTS (self-hosted, so the app runs with no network access)
+   -------------------------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Anton';
+  src: url('../assets/fonts/anton-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Inter ships as a variable font: one file covers weights 100-900. */
+@font-face {
+  font-family: 'Inter';
+  src: url('../assets/fonts/inter-variable.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* --------------------------------------------------------------------------
+   2. TOKENS
+   -------------------------------------------------------------------------- */
+
+:root {
+  /* Surfaces ------------------------------------------------------------- */
+  --bg: #ffffff;          /* application canvas: pure white, never grey */
+  --panel: #ffffff;       /* structural cards, separated by border alone */
+  --fill: #f5f5f5;        /* soft content cards: filled, not outlined */
+  --subtle: #fafafa;      /* icon boxes, table headers, inert chips */
+  --line: #ebebeb;        /* the single structural border colour */
+  --line-strong: #d6d6d6; /* hover / active border emphasis */
+
+  /* Text ----------------------------------------------------------------- */
+  --text: #0d0d0d;
+  --muted: #6b6b6b;
+  --faint: #9b9b9b;
+
+  /* Brand ---------------------------------------------------------------- */
+  /*
+    Lemon lime. It is a very light colour (relative luminance 0.69), which
+    decides how it may be used:
+
+      near-black on lime   13.26:1  fine for text
+      white on lime         1.41:1  unusable
+      lime on white         1.41:1  unusable
+
+    So `--accent` is a FILL - buttons, bars, active states - always with
+    `--on-accent` ink on top. Anything that is itself text or a thin line on a
+    white page uses `--accent-strong`, a darker shade of the same hue that
+    clears 5.3:1.
+  */
+  --accent: #c2e812;
+  --accent-hover: #b2d80c;
+  --accent-strong: #5f7300;
+  --accent-line: #5f7300;
+  --on-accent: #10130a;
+  --accent-subtle: #f4fbdc;
+
+  /* Chart line. Kept separate from the brand colour: it is a thin stroke that
+     has to stay legible on white and on the pale lime area fill beneath it. */
+  --chart-line: #48a9a6;
+
+  /* Clinical severity - the only colour in the system --------------------- */
+  --risk-low: #14703f;
+  --risk-low-subtle: #f0f6f2;
+  --risk-moderate: #8a5a0c;
+  --risk-moderate-subtle: #fbf5eb;
+  --risk-high: #a81f18;
+  --risk-high-subtle: #fbf1f0;
+
+  /* Spacing scale -------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;   /* the default grid gap: components never touch */
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+
+  /* Geometry ------------------------------------------------------------- */
+  --radius-panel: 8px;    /* structural panels only */
+  --radius-card: 14px;    /* soft filled content cards */
+  --radius-pill: 9999px;  /* every button, input and interactive control */
+  --radius-chip: 6px;     /* 36px icon boxes and small inert chips */
+
+  --content-width: 1200px;
+  --reading-width: 760px;
+
+  --transition: 140ms ease;
+}
+
+[data-theme='dark'] {
+  --bg: #0a0a0a;
+  --panel: #0e0e0e;
+  --fill: #151515;
+  --subtle: #141414;
+  --line: #242424;
+  --line-strong: #383838;
+
+  --text: #f4f4f4;
+  --muted: #9d9d9d;
+  --faint: #6d6d6d;
+
+  /* On a dark ground the brand colour clears 14:1, so here it can be text as
+     well as fill and no darker variant is needed. */
+  --accent: #c2e812;
+  --accent-hover: #d2f232;
+  --accent-strong: #c2e812;
+  --accent-line: #c2e812;
+  --on-accent: #10130a;
+  --accent-subtle: #1e2408;
+
+  /* The same teal clears 5.7:1 against the dark area fill, so the dark theme
+     uses it unchanged. */
+  --chart-line: #48a9a6;
+
+  --risk-low: #4fbd84;
+  --risk-low-subtle: #10241a;
+  --risk-moderate: #d3a04a;
+  --risk-moderate-subtle: #241d10;
+  --risk-high: #e8695f;
+  --risk-high-subtle: #2a1412;
+}
+
+/* --------------------------------------------------------------------------
+   3. RESET
+   -------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis-weight: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/*
+  The `hidden` attribute is applied by the UA stylesheet, which any author-level
+  `display` rule outranks. Several components here set `display: flex`, so
+  without this they would stay visible while marked hidden.
+*/
+[hidden] {
+  display: none !important;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+/*
+  Scrollbars.
+
+  Left unstyled, every scrolling container fell back to the ~17px native
+  Windows bar, which is a heavy grey slab inside a 380px chat panel. Firefox
+  and modern Chromium take `scrollbar-width`; the WebKit block below covers
+  older Chromium and Safari. Colours come from tokens so both themes work.
+*/
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: var(--radius-pill);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* The corner where a horizontal and vertical bar meet. */
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Respect users who ask for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   4. TYPOGRAPHY
+   Headings: Anton 400, uppercase, letter-spacing 0.02em.
+   Body: Inter 400. Labels, subtext and intros: Inter 300.
+   -------------------------------------------------------------------------- */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Anton', 'Inter', sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 0.92;
+  color: var(--text);
+  /* Anton is a condensed display face and headings here are uppercase, so a
+     long word can easily exceed a narrow viewport. Without this the heading
+     widens the page and every section scrolls sideways. */
+  overflow-wrap: break-word;
+}
+
+/* Minimums are sized so the longest heading still fits a 320px viewport once
+   `.wrap-br` has collapsed its forced line breaks. The h1 is deliberately
+   enormous - it is the whole design, and everything else stays quiet. */
+h1 { font-size: clamp(32px, 5vw, 58px); }
+h2 { font-size: clamp(26px, 4.4vw, 46px); }
+h3 { font-size: clamp(18px, 2.4vw, 24px); line-height: 1.14; }
+h4 { font-size: 18px; }
+h5 { font-size: 16px; }
+h6 { font-size: 14px; }
+
+p {
+  color: var(--text);
+}
+
+/* Intros and subtext read lighter, for an editorial feel. */
+.lead {
+  font-weight: 300;
+  font-size: clamp(16px, 2vw, 19px);
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: var(--reading-width);
+}
+
+.subtext {
+  font-weight: 300;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.micro {
+  font-weight: 300;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--faint);
+}
+
+/* Eyebrow / micro-label */
+.eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.eyebrow--accent {
+  color: var(--accent-strong);
+}
+
+a {
+  color: var(--accent-strong);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition), color var(--transition);
+}
+
+a:hover {
+  border-bottom-color: var(--accent-strong);
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: none;
+  border-color: var(--accent-line);
+}
+
+code,
+.mono {
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  letter-spacing: -0.01em;
+  /* File paths and identifiers have no spaces to break at. */
+  overflow-wrap: anywhere;
+}
+
+/*
+  Forced line breaks used to shape display headings on wide screens. They are
+  removed on narrow screens so the text can wrap where it actually fits.
+*/
+@media (max-width: 700px) {
+  .wrap-br {
+    display: none;
+  }
+}
+
+/* Tabular figures keep numeric columns aligned. */
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --------------------------------------------------------------------------
+   5. LAYOUT PRIMITIVES
+   -------------------------------------------------------------------------- */
+
+.shell {
+  width: 100%;
+  max-width: var(--content-width);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+/* Small screens get tighter gutters - 32px of padding on a 390px phone throws
+   away a sixth of the width. */
+@media (max-width: 640px) {
+  .shell { padding-inline: var(--space-4); }
+}
+
+/* Near-full-bleed. Used by the header, where the brand sits against the left
+   edge of the window rather than inside the content column. */
+.shell--wide {
+  max-width: none;
+  padding-inline: var(--space-6);
+}
+
+@media (min-width: 1100px) {
+  .shell--wide { padding-inline: var(--space-7); }
+}
+
+@media (max-width: 640px) {
+  .shell--wide { padding-inline: var(--space-4); }
+}
+
+/* Vertical rhythm between major page sections. */
+/* Sections are separated by space, not rules. */
+.section {
+  padding-block: var(--space-9);
+}
+
+.section--tight {
+  padding-block: var(--space-7);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.stack--lg { gap: var(--space-6); }
+.stack--sm { gap: var(--space-2); }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* auto-fit grid: cards wrap instead of scrolling horizontally, always. */
+.grid {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.grid--wide {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.grid--narrow {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.section-head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  margin-bottom: var(--space-7);
+  max-width: var(--reading-width);
+}
+
+/* The heading block at the top of a page. Left-aligned like everything else;
+   it only carries a little more space beneath it than a mid-page heading. */
+.section-head--page {
+  margin-bottom: var(--space-8);
+}
+
+/* Centred variant. Used where the content below is itself a single centred
+   column, so a left-aligned heading would hang off to one side of it. */
+.section-head--center {
+  max-width: 780px;
+  margin-inline: auto;
+  text-align: center;
+  align-items: center;
+}
+
+.section-head--center .lead {
+  margin-inline: auto;
+}
+
+/* --------------------------------------------------------------------------
+   6. PANELS
+   Flat structural cards. Border + 8px radius. Never a shadow.
+   -------------------------------------------------------------------------- */
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+  padding: var(--space-6);
+}
+
+.panel--tight { padding: var(--space-5); }
+.panel--flush { padding: 0; overflow: hidden; }
+
+.panel--subtle {
+  background: var(--subtle);
+}
+
+/*
+  The soft card. Filled, not outlined - it recedes instead of drawing a box
+  around itself, which is what stops a page of them looking like a dashboard.
+  This is the default container for content; `.panel` is kept for the few
+  places that genuinely need a hard structural edge (tables, matrices).
+*/
+.card {
+  background: var(--fill);
+  border: 0;
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+}
+
+/*
+  An unstyled grouping. Gives a heading + prose + table a shared vertical
+  rhythm without drawing a container around them. Most "cards" only ever
+  needed this.
+*/
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  align-items: stretch;
+}
+
+.card--lg { padding: var(--space-7); }
+.card--tight { padding: var(--space-5); }
+
+/* A card nested inside another filled surface: grey on grey disappears, so
+   it lifts to the panel colour instead. */
+.card--inset {
+  background: var(--panel);
+}
+
+/* A row-shaped card, as used for the list items in the reference layout. */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/*
+  Same cards, laid side by side once there is room. Short peer items (steps,
+  layers, caveats) read better as a row than as a tall stack.
+*/
+.card-list--cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: var(--space-4);
+}
+
+.card-list--cols .card-list__row {
+  padding: var(--space-6);
+}
+
+.card-list__row {
+  background: var(--fill);
+  border-radius: var(--radius-card);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.card-list__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  margin-top: var(--space-2);
+}
+
+.panel--interactive {
+  transition: border-color var(--transition);
+}
+
+.panel--interactive:hover {
+  border-color: var(--line-strong);
+}
+
+.panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--line);
+}
+
+.panel__body {
+  padding: var(--space-6);
+}
+
+.divider {
+  height: 1px;
+  background: var(--line);
+  border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   7. ICON BOXES
+   36px squared boxes with a light background and 1px border, used to anchor
+   list items, features and actions.
+   -------------------------------------------------------------------------- */
+
+.icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  background: var(--fill);
+  border: 0;
+  border-radius: var(--radius-chip);
+  color: var(--text);
+}
+
+.icon-box svg {
+  width: 17px;
+  height: 17px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* --------------------------------------------------------------------------
+   8. BUTTONS - always fully pill-shaped
+   -------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 13px 26px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.btn:hover {
+  border-color: var(--line-strong);
+  border-bottom-color: var(--line-strong);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: var(--accent-line);
+}
+
+.btn svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.btn--primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  border-bottom-color: var(--accent-hover);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--muted);
+}
+
+.btn--ghost:hover {
+  background: var(--subtle);
+  border-color: var(--line);
+  color: var(--text);
+}
+
+.btn--lg {
+  padding: 17px 36px;
+  font-size: 15px;
+}
+
+.btn--sm {
+  padding: 9px 18px;
+  font-size: 13px;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+.btn[disabled],
+.btn[aria-disabled='true'] {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Chromeless control: no border until hovered. Used for the theme and menu
+   toggles, which should not read as buttons sitting in the header. */
+.btn--bare {
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.btn--bare:hover {
+  background: var(--fill);
+  border-color: transparent;
+  color: var(--text);
+}
+
+/* Icon-only pill control (theme toggle, etc.) */
+.btn--icon {
+  width: 38px;
+  height: 38px;
+  padding: 0;
+}
+
+.btn--icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --------------------------------------------------------------------------
+   9. FORMS - inputs are pill-shaped, focus recolours the 1px border
+   -------------------------------------------------------------------------- */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-size: 14px;
+  font-weight: 300;   /* labels use the light weight */
+  color: var(--text);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.field__unit {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--faint);
+  white-space: nowrap;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: 14px 24px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 400;
+  transition: border-color var(--transition);
+  appearance: none;
+}
+
+.textarea {
+  border-radius: var(--radius-panel);
+  resize: vertical;
+  min-height: 120px;
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--faint);
+  font-weight: 300;
+}
+
+.input:hover,
+.select:hover {
+  border-color: var(--line-strong);
+}
+
+/* Focus states: no outline ring, the border becomes the accent instead. */
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--accent-line);
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--risk-high);
+}
+
+/* Remove the spinner arrows; they clash with the pill geometry. */
+.input[type='number']::-webkit-outer-spin-button,
+.input[type='number']::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.field__hint {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--faint);
+  padding-inline: var(--space-5);
+}
+
+.field__error {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--risk-high);
+  padding-inline: var(--space-5);
+}
+
+.field__error:empty {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   10. BADGES, CHIPS, TAGS
+   -------------------------------------------------------------------------- */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 5px 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--panel);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.badge--low {
+  color: var(--risk-low);
+  border-color: var(--risk-low);
+  background: var(--risk-low-subtle);
+}
+
+.badge--moderate {
+  color: var(--risk-moderate);
+  border-color: var(--risk-moderate);
+  background: var(--risk-moderate-subtle);
+}
+
+.badge--high {
+  color: var(--risk-high);
+  border-color: var(--risk-high);
+  background: var(--risk-high-subtle);
+}
+
+.badge--accent {
+  /* Badge text sits on the pale tint, so it needs the readable shade. */
+  color: var(--accent-strong);
+  border-color: var(--accent-line);
+  background: var(--accent-subtle);
+}
+
+/* Severity aliases so knowledge-base severities map straight onto badges. */
+.badge--normal   { color: var(--risk-low);      border-color: var(--risk-low);      background: var(--risk-low-subtle); }
+.badge--watch    { color: var(--risk-moderate); border-color: var(--risk-moderate); background: var(--risk-moderate-subtle); }
+.badge--critical { color: var(--risk-high);     border-color: var(--risk-high);     background: var(--risk-high-subtle); }
+
+/* --------------------------------------------------------------------------
+   11. TABLES - wrapped in an overflow container so the page never scrolls
+   -------------------------------------------------------------------------- */
+
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-panel);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  min-width: 480px;
+}
+
+.table th,
+.table td {
+  padding: var(--space-3) var(--space-5);
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+/*
+  Two-column key/value tables sit inside narrow panels, where the 480px floor
+  above would force a scrollbar and clip the values. They have no wide columns
+  to protect, so the floor is removed and the padding tightened.
+*/
+.table--compact {
+  min-width: 0;
+}
+
+.table--compact th,
+.table--compact td {
+  padding: var(--space-3) var(--space-4);
+}
+
+.table--compact td:last-child {
+  text-align: right;
+  /* Deliberately NOT nowrap. These cells hold everything from "200" to the
+     full pipeline description, and forcing one line pushed the table past its
+     column and produced a horizontal scrollbar it never needed. */
+  overflow-wrap: anywhere;
+}
+
+.table thead th {
+  background: var(--subtle);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table td.subtext,
+.table td .subtext {
+  color: var(--muted);
+}
+
+/* --------------------------------------------------------------------------
+   12. UTILITIES
+   -------------------------------------------------------------------------- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  z-index: 100;
+  padding: 10px 20px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--radius-pill);
+  transform: translateY(-200%);
+  transition: transform var(--transition);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.text-muted { color: var(--muted); }
+.text-accent { color: var(--accent-strong); }
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+/* Restores full-strength body colour on an element that inherits a muted one. */
+.text-strong { color: var(--text); }
+
+.reading { max-width: var(--reading-width); }
+.measure-sm { max-width: 320px; }
+.measure-md { max-width: 560px; }
+.measure-lg { max-width: 760px; }
+.list-plain { list-style: none; }
+.grow { flex: 1; min-width: 200px; }
+
+/* Body copy one step up, for a lead paragraph inside a panel. */
+.text-lg { font-size: 16px; }
+
+/* Heading size for a panel's own title, below the page's h2. */
+.panel-title { font-size: 21px; }
+
+/* A quiet metadata line under a page heading, replacing a row of badges. */
+.page-meta {
+  margin-top: var(--space-4);
+  font-size: 13px;
+  font-weight: 300;
+  color: var(--faint);
+}
+
+/* .row modifiers. Kept here so no template needs an inline style. */
+.row--nowrap { flex-wrap: nowrap; }
+.row--top { align-items: flex-start; }
+.row--baseline { align-items: baseline; }
+.row--between { justify-content: space-between; }
+.row--center { justify-content: center; }
+.row--tight { gap: var(--space-2); }
+
+.mt-3 { margin-top: var(--space-3); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-5 { margin-top: var(--space-5); }
+.mt-6 { margin-top: var(--space-6); }
+.mt-7 { margin-top: var(--space-7); }
+.mt-8 { margin-top: var(--space-8); }
+
+.mb-5 { margin-bottom: var(--space-5); }
+.mb-6 { margin-bottom: var(--space-6); }
+.mb-7 { margin-bottom: var(--space-7); }

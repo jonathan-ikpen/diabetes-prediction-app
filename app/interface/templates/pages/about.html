@@ -1,0 +1,195 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}Why this diabetes screening tool exists, how its three layers fit together, and what it deliberately does not do.{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="shell">
+
+    <div class="section-head section-head--page">
+      <h1>A screening tool<br class="wrap-br">for where the labs aren't</h1>
+      <p class="lead">
+        Type 2 diabetes is the rare disease that is both easy to detect and routinely
+        missed. The test is cheap and the treatment works, yet across Africa most people
+        living with diabetes have never been diagnosed. This project asks a narrow
+        question: can eight measurements a primary health centre can already obtain be
+        turned into a reliable prompt to go get tested?
+      </p>
+    </div>
+
+    <div class="prose-cols">
+      {% for note in regional.notes %}
+        <p class="subtext">{{ note }}</p>
+      {% endfor %}
+    </div>
+
+    <p class="micro mt-6">{{ regional.source }}</p>
+  </div>
+</section>
+
+{# ------------------------------------------------------- ARCHITECTURE -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Architecture</span>
+      <h2>Three layers, one job each</h2>
+      <p class="lead">
+        The codebase is organised so that each layer has exactly one responsibility and
+        depends only on the layer beneath it. Clinical facts live in one place, the model
+        lives in another, and the interface knows nothing about either.
+      </p>
+    </div>
+
+    <div class="def-rows">
+      {% for layer in [
+        {'name': 'Knowledge base', 'path': 'app/knowledgebase/',
+         'role': 'Every WHO and IDF threshold, the risk band definitions, and the prompt scaffolding that grounds the language model. Holds no logic and imports nothing from the other layers, so the clinical facts can be reviewed, tested, or replaced on their own.',
+         'files': 'who_idf_thresholds.json  ·  clinical_reference.py  ·  prompt_builder.py'},
+        {'name': 'Inference engine', 'path': 'app/engine/',
+         'role': 'Validates the eight inputs, scores them with the serialised Random Forest, classifies each value against the knowledge base, and produces the narrative. Depends on the knowledge base but knows nothing about Flask, so it can be tested and reused outside the web app.',
+         'files': 'validation.py  ·  predictor.py  ·  narrative.py'},
+        {'name': 'User interface', 'path': 'app/interface/',
+         'role': 'Page controllers, the JSON API, Jinja templates, and hand-written CSS and JavaScript. Orchestrates only: no clinical threshold and no model logic appears anywhere in this layer.',
+         'files': 'routes.py  ·  api.py  ·  templates/  ·  static/'},
+        {'name': 'Training pipeline', 'path': 'training/',
+         'role': 'Training-time only, never imported by a running request. Sources and verifies the dataset, cleans it, trains the forest, tunes the screening threshold, and serialises the artefacts the engine later loads.',
+         'files': 'fetch_dataset.py  ·  preprocess.py  ·  train.py  ·  evaluate.py'}
+      ] %}
+        <div class="def-row">
+          <div>
+            <span class="def-row__term">{{ layer.name }}</span>
+            <span class="def-row__path mono">{{ layer.path }}</span>
+          </div>
+          <div>
+            <p class="subtext">{{ layer.role }}</p>
+            <p class="micro mono mt-3">{{ layer.files }}</p>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------------- REQUEST FLOW -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Request flow</span>
+      <h2>What happens when you submit</h2>
+    </div>
+
+    <div class="def-rows">
+      {% for stage in [
+        {'label': 'Validate', 'n': '01',
+         'body': 'Each value is checked against the accepted range published in the knowledge base. Anything that is not a plain finite number inside that range is rejected with a message naming the field.',
+         'io': 'app/engine/validation.py'},
+        {'label': 'Score', 'n': '02',
+         'body': 'The pipeline imputes any missing value, then the Random Forest returns a probability. The knowledge base maps that probability to a risk band and reads each individual measurement against its WHO cut-off.',
+         'io': 'app/engine/predictor.py'},
+        {'label': 'Explain', 'n': '03',
+         'body': 'The probability, the band, and the relevant guideline text are assembled into a grounded prompt. The language model rewrites them as three plain paragraphs. It is given the clinical facts rather than asked to recall them.',
+         'io': 'app/engine/narrative.py'},
+        {'label': 'Render', 'n': '04',
+         'body': 'The page paints immediately with the deterministic explanation. The richer version is fetched in the background and swapped in when it arrives, so a slow provider never blocks the result.',
+         'io': 'app/interface/static/js/result.js'}
+      ] %}
+        <div class="def-row">
+          <div>
+            <span class="def-row__term">{{ stage.n }} &nbsp; {{ stage.label }}</span>
+            <span class="def-row__path mono">{{ stage.io }}</span>
+          </div>
+          <p class="subtext">{{ stage.body }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# ------------------------------------------------- DESIGN DECISIONS -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Design decisions</span>
+      <h2>Choices worth defending</h2>
+    </div>
+
+    <div class="disclosures">
+      {% for item in [
+        {'q': 'Why is the language model not allowed to recall clinical facts?',
+         'a': 'Because it recalls them imperfectly and cannot tell you when it has. Every threshold the explanation cites is injected into the prompt from who_idf_thresholds.json, and the system prompt forbids introducing any figure that was not supplied. The model is used for what it is reliably good at - rewriting structured facts into readable prose - and nothing else.'},
+        {'q': 'Why does the app work with no API key at all?',
+         'a': 'A screening result that cannot be explained is worse than useless. A deterministic writer composes the same three paragraphs directly from the knowledge base, and it runs whenever no provider is configured, the network fails, or the model declines the request. The interface always discloses which one produced the text you are reading.'},
+        {'q': 'Why replace the supplied dataset?',
+         'a': 'The CSV this project started with had already been cleaned by replacing missing values with the median of each outcome class. That writes the answer into the feature: insulin 102.5 meant a negative outcome every time and 169.5 meant positive, across 49% of all rows. A model trained on it scored 0.95 ROC-AUC by reading the label. The pipeline now downloads the original data and refuses to train on any copy that fails an integrity and leakage check.'},
+        {'q': 'Why tune the threshold instead of using 0.5?',
+         'a': 'Because the two errors are not equally costly. A false positive sends someone for a blood test they did not need; a false negative tells an at-risk person they are fine. The threshold was lowered until 80% of true cases are caught, and the loss in specificity was accepted deliberately rather than inherited from a default.'},
+        {'q': 'Why is nothing stored?',
+         'a': 'Health measurements are sensitive and this tool has no need for them after scoring. There is no database, no analytics, and no logging of submitted values. Responses are sent with no-store so nothing lands in a shared cache.'},
+        {'q': 'Why hand-written CSS?',
+         'a': 'The design system is small, specific, and opinionated: flat surfaces, one border colour, two type families, pill controls. A framework would ship far more than is needed and would have to be fought to produce this. Every rule in it is used.'}
+      ] %}
+        <details class="disclosure">
+          <summary class="disclosure__summary">
+            {{ item.q }}
+            <svg class="disclosure__icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+          </summary>
+          <p class="disclosure__content">{{ item.a }}</p>
+        </details>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{# -------------------------------------------------------- TECH STACK -- #}
+<section class="section">
+  <div class="shell">
+    <div class="section-head">
+      <span class="eyebrow">Built with</span>
+      <h2>Technology</h2>
+    </div>
+
+    <div class="prose-cols">
+      {% for group in [
+        {'title': 'Machine learning',
+         'items': ['scikit-learn Random Forest', 'Pandas and NumPy', 'Joblib serialisation', 'Stratified grid search']},
+        {'title': 'Backend',
+         'items': ['Python ' ~ metadata.get('environment', {}).get('python', '3.9+'), 'Flask application factory', 'Blueprint routing', 'Environment-based config']},
+        {'title': 'Narrative',
+         'items': ['Groq, running openai/gpt-oss-120b', 'Grounded prompt construction', 'Deterministic fallback writer', 'OpenAI and Gemini also supported']},
+        {'title': 'Frontend',
+         'items': ['Hand-written CSS, no framework', 'Vanilla JavaScript, no build step', 'Self-hosted Anton and Inter', 'Works without JavaScript']}
+      ] %}
+        <div>
+          <h3>{{ group.title }}</h3>
+          <ul class="plain-list mt-3">
+            {% for entry in group['items'] %}
+              <li class="subtext">{{ entry }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="disclaimer mt-8">
+      <p class="disclaimer__text">
+        <strong>A note on intent.</strong> {{ disclaimer }}
+      </p>
+    </div>
+
+    <div class="cta mt-6">
+      <div class="cta__text stack stack--sm">
+        <h3>See it work</h3>
+        <p class="subtext">
+          The assessment takes eight numbers and under a minute. Sample profiles are
+          provided if you want to see the range of outputs first.
+        </p>
+      </div>
+      <a class="btn btn--primary btn--lg" href="{{ url_for('pages.assess') }}">
+        Start the assessment
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

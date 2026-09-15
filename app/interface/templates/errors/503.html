@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="shell">
+  <div class="error-page">
+    <span class="error-page__code">503</span>
+    <span class="eyebrow">Model unavailable</span>
+    <h1>The model is not loaded</h1>
+    <p class="lead text-center">
+      Screening needs a trained model at <code>training/model/model.pkl</code>, and none was found.
+      Run the training pipeline from the project root, then try again.
+    </p>
+
+    <div class="panel measure-md text-left">
+      <span class="eyebrow">Run these in order</span>
+      <ul class="anchor-list mt-5">
+        <li class="anchor-list__item">
+          <div class="anchor-list__body">
+            <span class="anchor-list__title"><code>python -m training.fetch_dataset</code></span>
+            <span class="micro">Download and verify the source dataset.</span>
+          </div>
+        </li>
+        <li class="anchor-list__item">
+          <div class="anchor-list__body">
+            <span class="anchor-list__title"><code>python -m training.preprocess</code></span>
+            <span class="micro">Clean it and write the audit report.</span>
+          </div>
+        </li>
+        <li class="anchor-list__item">
+          <div class="anchor-list__body">
+            <span class="anchor-list__title"><code>python -m training.train</code></span>
+            <span class="micro">Train the Random Forest and write model.pkl.</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <a class="btn btn--primary" href="{{ url_for('pages.index') }}">
+      Back to home
+    </a>
+  </div>
+</div>
+{% endblock %}

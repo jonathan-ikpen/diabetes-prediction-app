@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="shell">
+  <div class="error-page">
+    <span class="error-page__code">404</span>
+    <span class="eyebrow">Page not found</span>
+    <h1>Nothing lives here</h1>
+    <p class="lead text-center">
+      The page you asked for does not exist. It may have been renamed, or the link that
+      brought you here may be out of date.
+    </p>
+    <div class="row row--center">
+      <a class="btn btn--primary" href="{{ url_for('pages.index') }}">
+        Back to home
+      </a>
+      <a class="btn" href="{{ url_for('pages.assess') }}">Start an assessment</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

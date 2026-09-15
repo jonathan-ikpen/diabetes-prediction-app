@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}Answer a few simple questions about yourself and find out whether it is worth getting tested for diabetes. No lab results needed.{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="shell">
+
+    <div class="section-head section-head--page section-head--center">
+      <h1>Check your risk</h1>
+      <p class="lead">
+        A few plain questions about you &mdash; no medical knowledge needed. It takes about
+        a minute, nothing is saved, and you will get an explanation you can act on.
+      </p>
+    </div>
+
+    {% if not model_ready %}
+      <div class="alert alert--error mb-6">
+        <div>
+          <strong>The model is not available.</strong>
+          <p class="subtext">Run <code>python -m training.train</code>, then reload.</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="alert alert--error mb-6" role="alert">
+        <div>
+          <strong>Let's fix one thing</strong>
+          <p class="subtext">{{ error }}</p>
+        </div>
+      </div>
+    {% endif %}
+
+    {#
+      One question at a time when JavaScript is available; a single ordinary
+      form when it is not. The server derives the model inputs either way, so
+      the page works with scripting turned off.
+    #}
+    <form class="interview" method="POST" action="{{ url_for('pages.check') }}" id="interview">
+
+      <div class="interview__bar" id="interview-bar" hidden>
+        <div class="interview__track">
+          <div class="interview__fill" id="interview-fill"></div>
+        </div>
+        <span class="interview__count eyebrow" id="interview-count"></span>
+      </div>
+
+      {% for q in questions %}
+        <fieldset class="interview__step"
+                  data-step
+                  data-id="{{ q.id }}"
+                  {% if q.depends_on %}
+                    data-depends-on="{{ q.depends_on.id }}"
+                    data-depends-value="{{ q.depends_on.value }}"
+                  {% endif %}>
+
+          <legend class="interview__question">{{ q.question }}</legend>
+          <p class="interview__help">{{ q.help }}</p>
+
+          {% if q.type == 'choice' %}
+            <div class="choice-grid">
+              {% for option in q.options %}
+                <label class="choice">
+                  <input type="radio"
+                         name="{{ q.id }}"
+                         value="{{ option.value }}"
+                         {% if answers.get(q.id) == option.value %}checked{% endif %}>
+                  <span class="choice__label">{{ option.label }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="interview__input">
+              <input class="input numeric"
+                     type="number"
+                     name="{{ q.id }}"
+                     inputmode="decimal"
+                     min="{{ q.min }}" max="{{ q.max }}" step="{{ q.step }}"
+                     placeholder="{{ q.min }}&ndash;{{ q.max }}"
+                     value="{{ answers.get(q.id, '') }}"
+                     data-min="{{ q.min }}" data-max="{{ q.max }}"
+                     autocomplete="off">
+              <span class="interview__unit">{{ q.unit }}</span>
+            </div>
+          {% endif %}
+
+          <p class="field__error" data-error role="alert"></p>
+        </fieldset>
+      {% endfor %}
+
+      <div class="interview__nav">
+        <button type="button" class="btn" id="interview-back" hidden>Back</button>
+        <button type="button" class="btn btn--primary btn--lg" id="interview-next" hidden>
+          Next
+        </button>
+        <button type="submit" class="btn btn--primary btn--lg" id="interview-submit"
+                {% if not model_ready %}disabled{% endif %}>
+          See my result
+        </button>
+      </div>
+    </form>
+
+    {# Plain supporting text, set well clear of the form so it never reads as
+       part of the question being answered. #}
+    <aside class="interview__note">
+      <span class="eyebrow">Why we don't ask for lab numbers</span>
+      <p class="subtext mt-4">
+        Two of the eight things the model looks at &mdash; serum insulin and skinfold
+        thickness &mdash; can only come from a clinic. Tested on records the model had never
+        seen, leaving both out changed its accuracy by less than half a percent, so we
+        simply don't ask. A blood sugar reading does matter, which is why we ask whether
+        you have one.
+      </p>
+      <p class="micro mt-4">
+        Have your lab results? <a href="{{ url_for('pages.assess') }}">Use the clinical
+        assessment</a> for the most accurate score.
+      </p>
+    </aside>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/interview.js') }}" defer></script>
+{% endblock %}

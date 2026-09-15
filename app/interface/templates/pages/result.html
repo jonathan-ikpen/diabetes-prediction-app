@@ -1,0 +1,312 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block description %}Your diabetes risk screening result, with each measurement interpreted against WHO and IDF thresholds.{% endblock %}
+
+{% set band = prediction.band_id %}
+{# Return people to whichever entry point they used. #}
+{% set again_url = url_for('pages.check') if source == 'check' else url_for('pages.assess') %}
+{% set again_label = 'Check again' if source == 'check' else 'New assessment' %}
+
+{% block content %}
+<section class="section">
+  <div class="shell">
+
+    <div class="section-head section-head--page">
+      <h1>Your risk assessment</h1>
+    </div>
+
+    {# ------------------------------------------------------- RESULT HERO #}
+    <div class="result-hero">
+      <div class="result-hero__score">
+        <span class="eyebrow">Estimated probability</span>
+
+        <div class="score score--{{ band }}">
+          <span class="score__value numeric">{{ prediction.percentage }}</span>
+          <span class="score__unit">%</span>
+        </div>
+
+        {# Segmented meter: 20 solid blocks, no gradient. #}
+        {% set filled = (prediction.probability * 20) | round(0, 'ceil') | int %}
+        <div class="meter meter--{{ band }}">
+          <div class="meter__track"
+               role="img"
+               aria-label="Risk meter showing {{ prediction.percentage }} percent">
+            {% for i in range(20) %}
+              <span class="meter__segment" data-filled="{{ 'true' if i < filled else 'false' }}"></span>
+            {% endfor %}
+          </div>
+          <div class="meter__scale">
+            <span>0%</span><span>50%</span><span>100%</span>
+          </div>
+        </div>
+
+        <p class="micro">
+          The probability that a person with these eight measurements tested positive for
+          diabetes in the reference cohort.
+        </p>
+      </div>
+
+      <div class="result-hero__detail">
+        <div class="row">
+          <span class="badge badge--{{ band }}">
+            <span class="badge__dot"></span>{{ prediction.band_label }}
+          </span>
+          {% if prediction.exceeds_screening_threshold %}
+            <span class="badge badge--accent">Above screening threshold</span>
+          {% endif %}
+        </div>
+
+        <p class="text-lg">{{ prediction.band_summary }}</p>
+
+        <div class="card card--tight card--inset">
+          <div class="row row--nowrap row--top">
+            <div class="stack stack--sm">
+              <span class="eyebrow">Recommended next step</span>
+              <p class="subtext text-strong">{{ prediction.band_action }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="row no-print">
+          <a class="btn btn--primary" href="{{ again_url }}">
+            {{ again_label }}
+          </a>
+          <button type="button" class="btn" id="print-result">
+            Print result
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{% if estimate_note or prediction.unknown %}
+<section class="section section--tight">
+  <div class="shell">
+    <div class="card card--tight measure-lg">
+      <span class="eyebrow">How certain is this?</span>
+      {% if estimate_note %}
+        <p class="subtext mt-4">{{ estimate_note }}</p>
+      {% endif %}
+      {% if prediction.unknown %}
+        <p class="micro mt-4">
+          Estimated rather than measured:
+          {% for key in prediction.unknown %}
+            {{ parameter_names.get(key, key) }}{{ ', ' if not loop.last }}
+          {% endfor %}.
+          These are left out of the measurement table below.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{# ------------------------------------------------------------ NARRATIVE #}
+<section class="section">
+  <div class="shell">
+
+    {#
+      The deterministic narrative below is rendered server-side so the page is
+      complete without JavaScript. result.js then requests the LLM version from
+      /api/narrative and swaps it in when it arrives.
+    #}
+    <div class="card"
+         id="narrative-panel"
+         data-payload='{{ prediction.inputs | tojson }}'
+         data-endpoint="{{ url_for('api.narrative') }}">
+
+      <div class="row row--between row--top">
+        <div class="row row--nowrap">
+          <div class="stack stack--sm">
+            <span class="eyebrow">What this means</span>
+            <h3 class="panel-title">Clinical explanation</h3>
+          </div>
+        </div>
+        <span class="badge" id="narrative-status" hidden>
+          <span class="badge__dot"></span><span data-status-text>Writing</span>
+        </span>
+      </div>
+
+      <div class="narrative__body mt-6" id="narrative-body">
+        {% for paragraph in fallback_narrative.paragraphs %}
+          <p>{{ paragraph }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="narrative__meta">
+        <p class="micro grow" id="narrative-source">
+          Composed from this tool's WHO/IDF knowledge base.
+        </p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{# --------------------------------------------------------- YOUR NUMBERS #}
+<section class="section">
+  <div class="shell">
+
+    <div class="section-head">
+      <span class="eyebrow">Your measurements</span>
+      <h2>Every value against the guidelines</h2>
+      <p class="lead">
+        {% if prediction.critical_count %}
+          {{ prediction.critical_count }} measurement{{ 's' if prediction.critical_count != 1 }}
+          sat outside the reference range{% if prediction.watch_count %} and
+          {{ prediction.watch_count }}{{ 'was' if prediction.watch_count == 1 else 'were' }}
+          borderline{% endif %}.
+        {% elif prediction.watch_count %}
+          No measurement was outside its reference range, but
+          {{ prediction.watch_count }} {{ 'was' if prediction.watch_count == 1 else 'were' }}
+          borderline.
+        {% else %}
+          All 8 measurements sat within their normal reference range.
+        {% endif %}
+        Model weight shows how much the Random Forest relies on that parameter overall.
+      </p>
+    </div>
+
+    <div class="row mb-6">
+      <span class="badge badge--critical">{{ prediction.critical_count }} outside range</span>
+      <span class="badge badge--watch">{{ prediction.watch_count }} borderline</span>
+      <span class="badge badge--normal">{{ prediction.normal_count }} normal</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Parameter</th>
+            <th scope="col">Your value</th>
+            <th scope="col">WHO / IDF reading</th>
+            <th scope="col">Model weight</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for finding in prediction.findings %}
+            <tr>
+              <td>
+                <div class="row row--nowrap">
+                  <span>
+                    <span class="finding-row__name">{{ finding.display_name }}</span>
+                    {% if finding.clinical_name != finding.display_name %}
+                      <span class="finding-row__clinical">{{ finding.clinical_name }}</span>
+                    {% endif %}
+                  </span>
+                </div>
+              </td>
+              <td class="finding-row__measure">
+                <span class="finding-row__value numeric">
+                  {{ finding.value | round(2) | float | int if finding.value == finding.value | round(0) else finding.value }}
+                </span>
+                {% if finding.unit != 'count' %}
+                  <span class="micro">{{ finding.unit }}</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge badge--{{ finding.severity }}">
+                  <span class="badge__dot"></span>{{ finding.band_label }}
+                </span>
+                <p class="micro finding-row__note">{{ finding.note }}</p>
+              </td>
+              <td>
+                {% set weight = importance_map.get(finding.key, 0) %}
+                <span class="impact-bar">
+                  <span class="impact-bar__track">
+                    <span class="impact-bar__fill"
+                          style="width: {{ (weight / peak_importance * 100) | round(1) }}%"></span>
+                  </span>
+                  <span class="impact-bar__value numeric">{{ (weight * 100) | round(1) }}%</span>
+                </span>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+{# ------------------------------------------------------------- CONTEXT #}
+<section class="section">
+  <div class="shell">
+    <div class="grid grid--wide">
+
+      <div class="card">
+        <span class="eyebrow">How the bands are set</span>
+        <p class="subtext mt-4 mb-5">
+          The probability is mapped onto one of three bands. Your result sits in the
+          highlighted row.
+        </p>
+        <div class="band-ladder">
+          {% for item in risk_bands %}
+            <div class="band-ladder__row" data-active="{{ 'true' if item.id == band else 'false' }}">
+              <span class="row row--nowrap row--tight">
+                <span class="badge badge--{{ item.id }}"><span class="badge__dot"></span>{{ item.label }}</span>
+              </span>
+              <span class="band-ladder__range">
+                {{ (item.min_probability * 100) | round | int }}% &ndash;
+                {{ ([item.max_probability, 1.0] | min * 100) | round | int }}%
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="micro mt-5">
+          The model's screening threshold is
+          {{ (prediction.screening_threshold * 100) | round(1) }}%, chosen so that at
+          least 80% of true cases are caught. Below that, false negatives rise sharply.
+        </p>
+      </div>
+
+      <div class="card">
+        <span class="eyebrow">WHO guidance that applies to everyone</span>
+        <ul class="anchor-list mt-5">
+          {% for item in guidance %}
+            <li class="anchor-list__item">
+              <div class="anchor-list__body">
+                <span class="anchor-list__title">{{ item.title }}</span>
+                <span class="micro">{{ item.body }}</span>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+    </div>
+
+    <div class="disclaimer mt-6">
+      <p class="disclaimer__text">
+        <strong>This is a screening result, not a diagnosis.</strong>
+        {{ disclaimer }}
+      </p>
+    </div>
+
+    <div class="cta mt-6 no-print">
+      <div class="cta__text stack stack--sm">
+        <h3>Want to understand the thresholds?</h3>
+        <p class="subtext">
+          Every cut-off used above is published, with its source, on the clinical
+          reference page.
+        </p>
+      </div>
+      <div class="row">
+        <a class="btn" href="{{ url_for('pages.guidelines') }}">
+          Clinical reference
+        </a>
+        <a class="btn btn--primary" href="{{ again_url }}">
+          {{ again_label }}
+        </a>
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="{{ url_for('static', filename='js/result.js') }}" defer></script>
+{% endblock %}
