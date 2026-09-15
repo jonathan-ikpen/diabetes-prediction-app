@@ -379,7 +379,7 @@ code,
 /* Small screens get tighter gutters - 32px of padding on a 390px phone throws
    away a sixth of the width. */
 @media (max-width: 640px) {
-  .shell { padding-inline: var(--space-4); }
+  .shell { padding-inline: var(--space-5); }
 }
 
 /* Near-full-bleed. Used by the header, where the brand sits against the left
@@ -394,7 +394,7 @@ code,
 }
 
 @media (max-width: 640px) {
-  .shell--wide { padding-inline: var(--space-4); }
+  .shell--wide { padding-inline: var(--space-5); }
 }
 
 /* Vertical rhythm between major page sections. */
