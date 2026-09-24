@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block title %}{{ page_title }}{% endblock %}
-{% block description %}How the diabetes risk model was trained, how well it performs on held-out data, and where it should not be trusted.{% endblock %}
+{% block description %}A simplified look at how the diabetes risk model was trained, its test scores, and where it shouldn't be trusted.{% endblock %}
 
 {% set test = evaluation.get('test_metrics', {}) %}
 {% set screening = evaluation.get('screening_metrics', {}) %}
@@ -9,25 +9,32 @@
 {% set matrix = screening.get('confusion_matrix', {}) %}
 
 {% block content %}
+{% if not model_ready %}
 <section class="section">
   <div class="shell">
-
     <div class="section-head section-head--page">
-      <h1>Model card</h1>
+      <h1>Model Card</h1>
       <p class="lead">
-        What this model is, what it was trained on, how well it actually performs, and the
-        conditions under which its output should not be trusted.
+        A simplified breakdown of how good this model is, what it looks at to make decisions, and when you shouldn't trust it.
       </p>
     </div>
-
-    {% if not model_ready %}
-      <div class="alert alert--error">
-        <div>
-          <strong>No trained model found.</strong>
-          <p class="subtext">Run <code>python -m training.train</code> to populate this page.</p>
-        </div>
+    <div class="alert alert--error">
+      <div>
+        <strong>No trained model found.</strong>
+        <p class="subtext">Run <code>python -m training.train</code> to populate this page.</p>
       </div>
-    {% else %}
+    </div>
+  </div>
+</section>
+{% else %}
+<section class="section">
+  <div class="shell">
+    <div class="section-head section-head--page">
+      <h1>Model Card</h1>
+      <p class="lead">
+        A simplified breakdown of how good this model is, what it looks at to make decisions, and when you shouldn't trust it.
+      </p>
+    </div>
 
     <p class="page-meta">
       {{ metadata.get('model_name') }} v{{ metadata.get('model_version') }}
@@ -38,16 +45,14 @@
     {# ------------------------------------------------------- HEADLINE -- #}
     <div class="metric-grid">
       {% for item in [
-        {'value': '%.3f'|format(test.get('roc_auc', 0)), 'label': 'ROC-AUC',
-         'note': 'Held-out test set. Threshold independent.'},
+        {'value': '%.3f'|format(test.get('roc_auc', 0)), 'label': 'ROC-AUC (Overall Grade)',
+         'note': 'Receiver Operating Characteristic - Area Under the Curve. 0.5 is guessing, 1.0 is perfect.'},
         {'value': (screening.get('recall', 0) * 100)|round|int ~ '%', 'label': 'Sensitivity',
-         'note': 'Share of true cases the tool catches.'},
+         'note': 'The percentage of truly sick people the tool successfully catches.'},
         {'value': (screening.get('specificity', 0) * 100)|round|int ~ '%', 'label': 'Specificity',
-         'note': 'Share of healthy people correctly cleared.'},
+         'note': 'The percentage of healthy people it correctly clears.'},
         {'value': (screening.get('accuracy', 0) * 100)|round|int ~ '%', 'label': 'Accuracy',
-         'note': 'Overall, at the screening threshold.'},
-        {'value': '%.3f'|format(cv.get('mean', 0)), 'label': 'Cross-validated AUC',
-         'note': cv.get('folds', 5)|string ~ '-fold, ±' ~ '%.3f'|format(cv.get('std', 0))}
+         'note': 'Overall, how often it makes the correct call.'}
       ] %}
         <div class="metric">
           <span class="metric__value numeric">{{ item.value }}</span>
@@ -61,55 +66,20 @@
     <div class="block mt-7">
       <div class="row row--nowrap row--top">
         <div class="stack stack--sm">
-          <span class="eyebrow">Operating threshold</span>
+          <span class="eyebrow">The Cut-off Rule</span>
           <h3 class="panel-title">
-            Tuned to {{ (metadata.get('screening_threshold', 0.5) * 100) | round(1) }}%,
-            not the textbook 50%
+            Threshold lowered to {{ (metadata.get('screening_threshold', 0.5) * 100) | round(1) }}%
           </h3>
         </div>
       </div>
 
       <p class="subtext mt-5 reading">
-        At the default 0.5 cut-off this model catches only
-        {{ (test.get('recall', 0) * 100) | round | int }}% of true cases. For a screening
-        instrument that is the wrong trade: telling an at-risk person they are fine costs
-        far more than sending a healthy person for a confirmatory blood test. The threshold
-        was lowered until at least
-        {{ (metadata.get('target_sensitivity', 0.8) * 100) | round | int }}% of cases are
-        caught, and the cost was paid in specificity. The cut-off was selected on
-        out-of-fold training predictions only, so the held-out test set stayed untouched.
+        Instead of needing to be <strong>50%</strong> sure to flag someone, the model's threshold was lowered to <strong>{{ (metadata.get('screening_threshold', 0.5) * 100) | round(1) }}%</strong>. 
+        <br><br>
+        <strong>Why?</strong> In medical screening, it is much safer to accidentally alarm a healthy person (who will then just get a confirmatory blood test) than to completely miss a sick person. By lowering the threshold, we catch more at-risk people.
       </p>
 
-      <div class="table-wrap mt-6">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">Metric</th>
-              <th scope="col">At 0.500 (default)</th>
-              <th scope="col">At {{ '%.3f'|format(metadata.get('screening_threshold', 0.5)) }} (in use)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for name, label in [('recall', 'Sensitivity (recall)'), ('specificity', 'Specificity'),
-                                   ('precision', 'Precision'), ('f1', 'F1 score'), ('accuracy', 'Accuracy')] %}
-              <tr>
-                <td>{{ label }}</td>
-                <td class="numeric">{{ '%.4f'|format(test.get(name, 0)) }}</td>
-                <td class="numeric">
-                  <strong>{{ '%.4f'|format(screening.get(name, 0)) }}</strong>
-                  {% if screening.get(name, 0) > test.get(name, 0) %}
-                    <span class="micro delta delta--up">&uarr;</span>
-                  {% elif screening.get(name, 0) < test.get(name, 0) %}
-                    <span class="micro delta delta--down">&darr;</span>
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
     </div>
-
   </div>
 </section>
 
@@ -117,90 +87,49 @@
 <section class="section">
   <div class="shell">
     <div class="section-head">
-      <span class="eyebrow">Held-out performance</span>
+      <span class="eyebrow">Real-World Mistakes</span>
       <h2>Where it gets things wrong</h2>
       <p class="lead">
-        Measured on {{ metadata.get('training', {}).get('n_test_rows', 0) }} records the
-        model never saw during training, at the screening threshold in use.
+        When tested on {{ metadata.get('training', {}).get('n_test_rows', 0) }} new patients it had never seen before, here is exactly what happened.
       </p>
     </div>
 
     <div class="grid grid--wide">
-
       {# ------------------------------------------------ confusion matrix #}
       <div class="block">
-        <span class="eyebrow">Confusion matrix</span>
+        <span class="eyebrow">Test Results (Out of {{ metadata.get('training', {}).get('n_test_rows', 0) }} patients)</span>
         <div class="confusion mt-5">
           <div class="confusion__cell confusion__cell--head"></div>
-          <div class="confusion__cell confusion__cell--head">Predicted low</div>
-          <div class="confusion__cell confusion__cell--head">Predicted at risk</div>
+          <div class="confusion__cell confusion__cell--head">Model said: Fine</div>
+          <div class="confusion__cell confusion__cell--head">Model said: At Risk</div>
 
-          <div class="confusion__cell confusion__cell--head">Actually negative</div>
+          <div class="confusion__cell confusion__cell--head">Healthy People</div>
           <div class="confusion__cell confusion__cell--good">
             <span class="confusion__count numeric">{{ matrix.get('true_negative', 0) }}</span>
-            <span class="confusion__tag">Correctly cleared</span>
+            <span class="confusion__tag">Correctly told they were fine</span>
           </div>
           <div class="confusion__cell">
             <span class="confusion__count numeric">{{ matrix.get('false_positive', 0) }}</span>
-            <span class="confusion__tag">Sent for testing unnecessarily</span>
+            <span class="confusion__tag">Falsely alarmed (sent for unnecessary test)</span>
           </div>
 
-          <div class="confusion__cell confusion__cell--head">Actually positive</div>
+          <div class="confusion__cell confusion__cell--head">Sick People</div>
           <div class="confusion__cell confusion__cell--bad">
             <span class="confusion__count numeric">{{ matrix.get('false_negative', 0) }}</span>
-            <span class="confusion__tag">Missed &mdash; the costly error</span>
+            <span class="confusion__tag">Missed (the most dangerous mistake)</span>
           </div>
           <div class="confusion__cell confusion__cell--good">
             <span class="confusion__count numeric">{{ matrix.get('true_positive', 0) }}</span>
-            <span class="confusion__tag">Correctly flagged</span>
+            <span class="confusion__tag">Correctly warned to get checked</span>
           </div>
         </div>
 
         <p class="micro mt-5">
-          {{ matrix.get('false_negative', 0) }} at-risk people were missed and
-          {{ matrix.get('false_positive', 0) }} healthy people were referred for a
-          confirmatory test. The second error is recoverable; the first is not.
+          <strong>{{ matrix.get('false_negative', 0) }}</strong> sick people were completely missed and
+          <strong>{{ matrix.get('false_positive', 0) }}</strong> healthy people were alarmed for no reason. 
+          Sending healthy people to get tested is a recoverable error; missing a sick person is not.
         </p>
       </div>
-
-      {# ------------------------------------------------------ ROC curve #}
-      <div class="block">
-        <span class="eyebrow">ROC curve</span>
-        <p class="subtext mt-4">
-          Sensitivity against the false positive rate across every possible threshold. The
-          dashed line is random guessing.
-        </p>
-
-        {% if evaluation.get('roc_curve') %}
-          <svg class="chart mt-5" viewBox="-14 -8 122 122" role="img"
-               aria-label="ROC curve with an area under the curve of {{ '%.3f'|format(test.get('roc_auc', 0)) }}">
-            <g class="chart__grid">
-              {% for tick in [0, 25, 50, 75, 100] %}
-                <line x1="0" y1="{{ tick }}" x2="100" y2="{{ tick }}"/>
-                <line x1="{{ tick }}" y1="0" x2="{{ tick }}" y2="100"/>
-              {% endfor %}
-            </g>
-
-            <polygon class="chart__area"
-                     points="0,100 {% for point in evaluation.roc_curve %}{{ (point.fpr * 100)|round(2) }},{{ (100 - point.tpr * 100)|round(2) }} {% endfor %}100,100"/>
-
-            <line class="chart__diagonal" x1="0" y1="100" x2="100" y2="0"/>
-
-            <polyline class="chart__curve"
-                      points="{% for point in evaluation.roc_curve %}{{ (point.fpr * 100) | round(2) }},{{ (100 - point.tpr * 100) | round(2) }} {% endfor %}"/>
-
-            <text class="chart__label" x="50" y="114" text-anchor="middle">False positive rate</text>
-            <text class="chart__label" x="-6" y="50" text-anchor="middle"
-                  transform="rotate(-90 -6 50)">Sensitivity</text>
-          </svg>
-
-          <div class="row row--between mt-5">
-            <span class="badge badge--accent">AUC {{ '%.3f'|format(test.get('roc_auc', 0)) }}</span>
-            <span class="micro">Random guessing would score 0.500</span>
-          </div>
-        {% endif %}
-      </div>
-
     </div>
   </div>
 </section>
@@ -209,11 +138,10 @@
 <section class="section">
   <div class="shell">
     <div class="section-head">
-      <span class="eyebrow">Feature importance</span>
-      <h2>What the forest actually weighs</h2>
+      <span class="eyebrow">What the Model Looks At</span>
+      <h2>Top Factors for Decisions</h2>
       <p class="lead">
-        Mean decrease in impurity across all trees. Glucose dominating is the expected and
-        clinically correct result &mdash; it is the parameter WHO uses to define the disease.
+        When making a decision, the model weighs these factors the most. Glucose being #1 is exactly what doctors expect.
       </p>
     </div>
 
@@ -230,8 +158,8 @@
             </span>
             <span class="impact-bar">
               <span class="impact-bar__track">
-                <span class="impact-bar__fill"
-                      style="width: {{ (row.importance / importances[0].importance * 100) | round(1) }}%"></span>
+                {% set fill_style = 'style="width: ' ~ ((row.importance / importances[0].importance * 100) | round(1)) ~ '%"' %}
+                <span class="impact-bar__fill" {{ fill_style | safe }}></span>
               </span>
               <span class="impact-bar__value numeric">{{ (row.importance * 100) | round(1) }}%</span>
             </span>
@@ -246,115 +174,30 @@
 <section class="section">
   <div class="shell">
     <div class="section-head">
-      <span class="eyebrow">Reproducibility</span>
-      <h2>How it was trained</h2>
+      <span class="eyebrow">How it was trained</span>
+      <h2>The Data Behind the Model</h2>
     </div>
 
     <div class="grid grid--wide">
-
       <div class="block">
-        <span class="eyebrow">Dataset</span>
+        <span class="eyebrow">Dataset Summary</span>
         <div class="table-wrap mt-5">
           <table class="table table--compact">
             <tbody>
               <tr><td>Source</td><td>{{ dataset.get('name') }}</td></tr>
-              <tr><td>Records</td><td class="numeric">{{ dataset.get('rows') }}</td></tr>
-              <tr><td>Features</td><td class="numeric">{{ dataset.get('features') }}</td></tr>
+              <tr><td>Total Patients</td><td class="numeric">{{ dataset.get('rows') }}</td></tr>
               <tr>
-                <td>Class balance</td>
-                <td class="numeric">
-                  {{ dataset.get('class_balance', {}).get('negative_0') }} negative /
-                  {{ dataset.get('class_balance', {}).get('positive_1') }} positive
-                </td>
+                <td>Used for Training</td>
+                <td class="numeric">{{ metadata.get('training', {}).get('n_train_rows') }} patients</td>
               </tr>
               <tr>
-                <td>Train / test split</td>
-                <td class="numeric">
-                  {{ metadata.get('training', {}).get('n_train_rows') }} /
-                  {{ metadata.get('training', {}).get('n_test_rows') }} (stratified)
-                </td>
-              </tr>
-              <tr>
-                <td>Zero-encoded missing</td>
-                <td>{{ metadata.get('zero_as_missing_columns', []) | join(', ') }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p class="micro mt-5">
-          Zeros in those five columns mean "not measured", not zero. They are replaced by
-          the column median inside the pipeline, fitted on training folds only so no test
-          information leaks into training.
-        </p>
-      </div>
-
-      <div class="block">
-        <span class="eyebrow">Selected hyperparameters</span>
-        <div class="table-wrap mt-5">
-          <table class="table table--compact">
-            <tbody>
-              {% for key, value in metadata.get('hyperparameters', {}).items() %}
-                <tr><td><code>{{ key }}</code></td><td class="numeric">{{ value }}</td></tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        <p class="micro mt-5">
-          Chosen by grid search over
-          {{ metadata.get('training', {}).get('cv_folds', 5) }}-fold stratified
-          cross-validation, scored on
-          <code>{{ metadata.get('training', {}).get('search_scoring', 'roc_auc') }}</code>.
-          Random seed {{ metadata.get('training', {}).get('random_state') }}, so a retrain
-          reproduces these numbers exactly.
-        </p>
-      </div>
-
-      <div class="block">
-        <span class="eyebrow">Cross-validation stability</span>
-        <p class="subtext mt-4">
-          ROC-AUC on each of the {{ cv.get('folds', 5) }} folds. Tight spread means the
-          model is not depending on one lucky split.
-        </p>
-        <ul class="importance-list mt-5">
-          {% for score in cv.get('scores', []) %}
-            <li class="importance-list__row">
-              <span class="importance-list__name">
-                <span class="importance-list__rank numeric">Fold {{ loop.index }}</span>
-              </span>
-              <span class="impact-bar">
-                <span class="impact-bar__track">
-                  <span class="impact-bar__fill" style="width: {{ (score * 100) | round(1) }}%"></span>
-                </span>
-                <span class="impact-bar__value numeric">{{ '%.3f'|format(score) }}</span>
-              </span>
-            </li>
-          {% endfor %}
-        </ul>
-        <p class="micro mt-5">
-          Mean {{ '%.4f'|format(cv.get('mean', 0)) }},
-          standard deviation {{ '%.4f'|format(cv.get('std', 0)) }}.
-          Train-to-test ROC-AUC gap:
-          {{ '%.4f'|format(evaluation.get('overfitting_gap_roc_auc', 0)) }}.
-        </p>
-      </div>
-
-      <div class="block">
-        <span class="eyebrow">Environment</span>
-        <div class="table-wrap mt-5">
-          <table class="table table--compact">
-            <tbody>
-              {% for key, value in metadata.get('environment', {}).items() %}
-                <tr><td>{{ key | replace('_', ' ') | title }}</td><td class="numeric">{{ value }}</td></tr>
-              {% endfor %}
-              <tr>
-                <td>Pipeline</td>
-                <td class="subtext">{{ metadata.get('pipeline_steps', []) | join(' &rarr; ') | safe }}</td>
+                <td>Used for Testing</td>
+                <td class="numeric">{{ metadata.get('training', {}).get('n_test_rows') }} patients</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
-
     </div>
   </div>
 </section>
@@ -391,61 +234,7 @@
         </details>
       {% endfor %}
     </div>
-
-    {# ---------------------------------------------------------- API -- #}
-    <div class="block mt-8">
-      <div class="row row--nowrap row--top">
-        <div class="stack stack--sm">
-          <span class="eyebrow">Programmatic access</span>
-          <h3 class="panel-title">JSON API</h3>
-        </div>
-      </div>
-
-      <div class="table-wrap mt-6">
-        <table class="table">
-          <thead>
-            <tr>
-              <th scope="col">Endpoint</th>
-              <th scope="col">Method</th>
-              <th scope="col">Returns</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><code>/health</code></td>
-              <td>GET</td>
-              <td class="subtext">
-                Live AI status. Pings the LLM provider and reports whether it is
-                genuinely usable. 200 when connected, 503 otherwise.
-              </td>
-            </tr>
-            <tr>
-              <td><code>/api/health</code></td>
-              <td>GET</td>
-              <td class="subtext">Full readiness: the model, the live AI status, and the knowledge base.</td>
-            </tr>
-            <tr>
-              <td><code>/api/predict</code></td>
-              <td>POST</td>
-              <td class="subtext">Probability, risk band, and the WHO/IDF reading of all eight values. Deterministic.</td>
-            </tr>
-            <tr>
-              <td><code>/api/narrative</code></td>
-              <td>POST</td>
-              <td class="subtext">The same, plus the generated clinical explanation.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <p class="micro mt-5">
-        POST a JSON object with all eight parameter names:
-        <code>{{ metadata.get('feature_order', []) | join(', ') }}</code>.
-        Invalid input returns 400 with a per-field message.
-      </p>
-    </div>
-
-    {% endif %}
   </div>
 </section>
+{% endif %}
 {% endblock %}
