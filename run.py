@@ -222,6 +222,16 @@ app = create_app()
 
 
 if __name__ == "__main__":
+    import os
+    import threading
+    import webbrowser
+
     settings = get_config()
     print(f"\n  {APP_NAME} running at http://{settings.host}:{settings.port}\n")
+
+    # Only open the browser once (avoids double-opening when the debugger reloads)
+    if not settings.is_debug or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        url = f"http://{settings.host}:{settings.port}"
+        threading.Timer(1.25, lambda: webbrowser.open(url)).start()
+
     app.run(host=settings.host, port=settings.port, debug=settings.is_debug)
